@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load crispy_forms_tags %}
+    <section class="position-relative py-4 py-xl-5">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-md-8 col-xl-6">
+                    <h2>Login</h2>
+                    <p>Sign in to create listings, message users, and submit reports.</p>
+                </div>
+            </div>
+            <div class="row d-flex justify-content-center">
+                <div class="col-md-6 col-xl-6">
+                    <div class="card mb-5 shadow-sm" style="padding:10%">
+                        <h2>Welcome back</h2>
+                        <div class="card-body d-flex flex-column align-items-center">
+                            <form method="post">
+                                {% csrf_token %}
+                                {% crispy form %}
+                            </form>
+                        </div><a class="text-reset" href="{% url 'register' %}">Register</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

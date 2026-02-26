@@ -1,0 +1,7 @@
+.avatar {
+  width: clamp(28px, 3vw, 44px);
+  height: clamp(28px, 3vw, 44px);
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+}
