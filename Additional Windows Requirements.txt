@@ -1,0 +1,3 @@
+# Additional requirements (install from their websites).
+mariadb-connector (C) 64-bit -> put folder in C:\ root directory
+VC++ Build Tools V14 or Higher
