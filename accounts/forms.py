@@ -71,6 +71,18 @@ class RegisterForm(forms.Form):
         max_length=254,
         widget=forms.EmailInput(attrs={"autocomplete": "email"}),
     )
+
+    first_name: forms.CharField = forms.CharField(
+        label="First name",
+        max_length=150,
+        widget=forms.TextInput(attrs={"autocomplete": "given-name"}),
+    )
+    last_name: forms.CharField = forms.CharField(
+        label="Last name",
+        max_length=150,
+        widget=forms.TextInput(attrs={"autocomplete": "family-name"}),
+    )
+
     password1: forms.CharField = forms.CharField(
         label="Password",
         strip=False,
@@ -101,6 +113,11 @@ class RegisterForm(forms.Form):
         self.helper.form_method = "post"
         self.helper.layout = Layout(
             "email",
+            Row(
+                Column("first_name", css_class="col-md-6"),
+                Column("last_name", css_class="col-md-6"),
+                css_class="g-3",
+            ),
             "password1",
             "password2",
             Row(
@@ -110,6 +127,18 @@ class RegisterForm(forms.Form):
             ),
             Submit("submit", "Register", css_class="btn btn-primary w-100 mt-3"),
         )
+
+    def clean_first_name(self) -> str:
+        first_name: str = self.cleaned_data["first_name"].strip()
+        if not first_name.isalpha():
+            raise ValidationError("First name may only contain alphabetical characters.")
+        return first_name
+
+    def clean_last_name(self) -> str:
+        last_name: str = self.cleaned_data["last_name"].strip()
+        if not last_name.isalpha():
+            raise ValidationError("Last name may only contain alphabetical characters.")
+        return last_name
 
     def clean_email(self) -> str:
         email: str = self.cleaned_data["email"].strip().lower()
@@ -147,6 +176,8 @@ class RegisterForm(forms.Form):
 
         email: str = self.cleaned_data["email"]
         password: str = self.cleaned_data["password1"]
+        first_name: str = self.cleaned_data["first_name"]
+        last_name: str = self.cleaned_data["last_name"]
 
         # If you're using Django's default User model, it requires username.
         # Using email as username is a common simple approach.
@@ -154,6 +185,8 @@ class RegisterForm(forms.Form):
             username=email,
             email=email,
             password=password,
+            first_name=first_name,
+            last_name=last_name
         )
         return user
 
