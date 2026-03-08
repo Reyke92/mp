@@ -10,6 +10,8 @@ from django.core.exceptions import ValidationError
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Row, Column, Submit
 
+from core.validators.images import validate_uploaded_image
+
 
 US_STATES: list[tuple[str, str]] = [
     ("Alabama", "Alabama"),
@@ -140,6 +142,12 @@ class RegisterForm(forms.Form):
             raise ValidationError("Last name may only contain alphabetical characters.")
         return last_name
 
+    def clean_city_name(self) -> str:
+        city_name: str = self.cleaned_data["city_name"].strip()
+        if not city_name:
+            raise ValidationError("City is required.")
+        return city_name
+    
     def clean_email(self) -> str:
         email: str = self.cleaned_data["email"].strip().lower()
         UserModel = get_user_model()
@@ -213,3 +221,91 @@ class LoginForm(forms.Form):
             "password",
             Submit("submit", "Log In", css_class="btn btn-primary w-100 mt-3"),
         )
+
+
+class ProfileForm(forms.Form):
+    first_name: forms.CharField = forms.CharField(
+        label="First name",
+        max_length=150,
+        widget=forms.TextInput(attrs={"autocomplete": "given-name"}),
+    )
+    last_name: forms.CharField = forms.CharField(
+        label="Last name",
+        max_length=150,
+        widget=forms.TextInput(attrs={"autocomplete": "family-name"}),
+    )
+
+    bio: forms.CharField = forms.CharField(
+        label="Bio",
+        required=False,
+        max_length=80,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 5,
+                "placeholder": "Short bio... (a message you want other users to see)",
+            }
+        ),
+    )
+
+    avatar: forms.ImageField = forms.ImageField(
+        label="Avatar",
+        required=False,
+        validators=[validate_uploaded_image],
+    )
+
+    city_name: forms.CharField = forms.CharField(
+        label="City",
+        max_length=80,
+        widget=forms.TextInput(attrs={"autocomplete": "address-level2"}),
+    )
+    state_name: forms.ChoiceField = forms.ChoiceField(
+        label="State",
+        choices=US_STATES,
+        widget=forms.Select(attrs={"autocomplete": "address-level1"}),
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper(self)
+        self.helper.form_method = "post"
+        self.helper.attrs = {"enctype": "multipart/form-data"}
+        self.helper.layout = Layout(
+            Row(
+                Column("first_name", css_class="col-md-6"),
+                Column("last_name", css_class="col-md-6"),
+                css_class="g-3",
+            ),
+            "bio",
+            "avatar",
+            Row(
+                Column("city_name", css_class="col-md-6"),
+                Column("state_name", css_class="col-md-6"),
+                css_class="g-3",
+            ),
+            # Not including this submit button - there will already be one in the template.
+            # Preserving this in case we change our minds.
+            #Submit("submit", "Save Changes", css_class="btn btn-primary w-100 mt-3"),
+        )
+
+    def clean_first_name(self) -> str:
+        first_name: str = self.cleaned_data["first_name"].strip()
+        if not first_name.isalpha():
+            raise ValidationError("First name may only contain alphabetical characters.")
+        return first_name
+
+    def clean_last_name(self) -> str:
+        last_name: str = self.cleaned_data["last_name"].strip()
+        if not last_name.isalpha():
+            raise ValidationError("Last name may only contain alphabetical characters.")
+        return last_name
+
+    def clean_bio(self) -> str:
+        bio: str = self.cleaned_data.get("bio", "").strip()
+        return bio
+
+    def clean_city_name(self) -> str:
+        city_name: str = self.cleaned_data["city_name"].strip()
+        if not city_name:
+            raise ValidationError("City is required.")
+        return city_name

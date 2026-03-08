@@ -1,63 +1,44 @@
-<!DOCTYPE html>
-<html data-bs-theme="light" lang="en">
+{% extends 'sidebar_content_view.html' %}
+{% block inner_content %}
+{% load crispy_forms_tags %}
 
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-    <title>Marketplace</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="../assets/css/Navbar-Right-Links-icons.css">
-    <link rel="stylesheet" href="../assets/css/styles.css">
-</head>
-
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-9">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex">
-                            <div class="d-flex flex-shrink-0"><img class="rounded-circle m-1 avatar" src="../assets/img/DefaultAvatar.png"></div>
-                            <div class="d-flex flex-column flex-grow-1">
-                                <h4>FirstName, LastName</h4>
-                                <h6 class="text-muted mb-2">City, ST</h6>
-                            </div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex">
+                        <div class="d-flex flex-shrink-0"><img class="rounded-circle bg-info m-1 me-3 avatar" src="{{ profile.avatar.url }}"></div>
+                        <div class="d-flex flex-column flex-grow-1">
+                            <h4>{{user.first_name}} {{user.last_name}}</h4>
+                            <h6 class="text-muted mb-2">{{profile.city.city_name}}, {{profile.city.state.state_code}}</h6>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3">
-                <div class="btn-group w-100 flex-column gap-2" role="group"><button class="btn btn-primary" type="submit" form="profile-form">Save Profile</button><button class="btn btn-primary" id="cancel-btn" type="button">Cancel</button></div>
+        </div>
+        <div class="col-md-3">
+            <div class="btn-group w-100 flex-column gap-2" role="group">
+                <button class="btn btn-primary" type="submit" form="profile-form">Save Profile</button>
+                <a class="btn btn-primary" role="button" id="cancel-btn" href="{% url 'profile' %}">Cancel</a>
             </div>
         </div>
     </div>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-body">
-                        <h4 class="card-title">Edit Fields</h4>
-                        <h6 class="text-muted card-subtitle mb-2">To save your changes, click "Save Profile".</h6>
-                        <form class="text-center" id="profile-form" method="post">
-                            <div class="mb-3"><input class="form-control" type="text" id="first-name-box" name="first-name" placeholder="First Name" required="" minlength="1" maxlength="40"></div>
-                            <div class="mb-3"><input class="form-control" type="text" id="last-name-box" name="last-name" placeholder="Last Name" required="" minlength="1" maxlength="40"></div>
-                            <div class="mb-3"><input class="form-control" type="text" id="bio-box" name="bio" placeholder="Short bio..." maxlength="500" minlength="1" required=""></div><label class="form-label mt-2" for="change-avatar-box">Avatar Image</label>
-                            <div class="mb-3"><input class="form-control" type="file" id="change-avatar-box" name="avatar" accept="image/*"></div><label class="form-label mt-2" for="city-box">Where You Live</label>
-                            <div class="mb-3"><input class="form-control" type="text" id="city-box" name="city" placeholder="City" required="" minlength="1" maxlength="30"></div>
-                            <div class="mb-3"><select class="form-select" id="state-box" placeholder="State" name="state" required="">
-                                    <option value="ky">Kentucky</option>
-                                </select></div>
-                            <div class="mb-3"></div>
-                        </form>
-                    </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Edit Fields</h4>
+                    <h6 class="text-muted card-subtitle mb-2">To save your changes, click "Save Profile".</h6>
+                    <form class="text-center" id="profile-form" enctype="multipart/form-data" method="post">
+                        {% csrf_token %}
+                        {% crispy form %}
+                    </form>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div><button class="btn btn-primary w-100" id="change-password-btn" type="button">Change Password</button></div>
-            </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
-</html>
+</div>
+{% endblock %}
