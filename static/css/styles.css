@@ -5,3 +5,110 @@
   display: block;
   flex-shrink: 0;
 }
+
+.category-offcanvas {
+  --bs-offcanvas-width: min(92vw, 360px);
+}
+
+.category-sidebar-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.category-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.category-link {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.85rem;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.category-link:hover,
+.category-link:focus {
+  background-color: var(--bs-tertiary-bg);
+  border-color: var(--bs-primary-border-subtle);
+  color: var(--bs-body-color);
+}
+
+.category-link.active {
+  background-color: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary);
+  color: var(--bs-emphasis-color);
+}
+
+.category-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.85rem;
+  color: var(--bs-secondary-color);
+  background-color: var(--bs-body-bg);
+}
+
+.category-toggle:hover,
+.category-toggle:focus {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+  border-color: var(--bs-primary-border-subtle);
+}
+
+.category-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.category-toggle svg {
+  transition: transform 0.15s ease;
+}
+
+.category-children {
+  margin-top: 0.6rem;
+  margin-left: 1rem;
+  padding-left: 0.9rem;
+  border-left: 2px solid var(--bs-border-color-translucent);
+}
+
+.category-node.depth-0 + .category-node.depth-0 {
+  margin-top: 0.75rem;
+}
+
+.category-node.depth-1 .category-link,
+.category-node.depth-1 .category-toggle,
+.category-node.depth-2 .category-link,
+.category-node.depth-2 .category-toggle,
+.category-node.depth-3 .category-link,
+.category-node.depth-3 .category-toggle {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+@media (max-width: 575.98px) {
+  .category-link {
+    padding: 0.7rem 0.8rem;
+  }
+
+  .category-toggle {
+    width: 2.5rem;
+  }
+
+  .category-children {
+    margin-left: 0.6rem;
+    padding-left: 0.75rem;
+  }
+}

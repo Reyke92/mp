@@ -1,0 +1,154 @@
+<form
+    id="search-filter-form"
+    method="get"
+    action="{% url filter_submit_url_name %}"
+    data-category-refresh-url="{% url category_refresh_url_name %}"
+>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Filters</h2>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url clear_filters_url_name %}">Clear</a>
+            </div>
+
+            {% if filter_form.non_field_errors %}
+            <div class="alert alert-danger py-2">
+                {% for error in filter_form.non_field_errors %}
+                <div>{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ filter_form.q.id_for_label }}">{{ filter_form.q.label }}</label>
+                {{ filter_form.q }}
+                {% for error in filter_form.q.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ filter_form.category.id_for_label }}">{{ filter_form.category.label }}</label>
+                {{ filter_form.category }}
+                <div class="form-text">Changing category rebuilds the category-specific attribute filters.</div>
+                {% for error in filter_form.category.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Price</label>
+                <div class="row g-2">
+                    <div class="col-6">
+                        {{ filter_form.min_price }}
+                    </div>
+                    <div class="col-6">
+                        {{ filter_form.max_price }}
+                    </div>
+                </div>
+                {% for error in filter_form.min_price.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+                {% for error in filter_form.max_price.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ filter_form.condition.id_for_label }}">{{ filter_form.condition.label }}</label>
+                {{ filter_form.condition }}
+                {% for error in filter_form.condition.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="{{ filter_form.distance_miles.id_for_label }}">{{ filter_form.distance_miles.label }}</label>
+                {{ filter_form.distance_miles }}
+                <div class="form-text">{{ filter_form.distance_miles.help_text }}</div>
+                {% for error in filter_form.distance_miles.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label" for="{{ filter_form.sort.id_for_label }}">{{ filter_form.sort.label }}</label>
+                {{ filter_form.sort }}
+                {% for error in filter_form.sort.errors %}
+                <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <div class="border-top pt-3 mt-3">
+                <h3 class="h6 mb-3">Attribute filters</h3>
+
+                {% if dynamic_attribute_sections %}
+                    {% for section in dynamic_attribute_sections %}
+                    <div class="mb-3">
+                        <div class="fw-semibold small mb-2">{{ section.label }}</div>
+
+                        {% if section.value_type_name|lower == 'int' or section.value_type_name|lower == 'integer' or section.value_type_name|lower == 'decimal' %}
+                        <div class="row g-2">
+                            <div class="col-6">
+                                {{ section.fields.0 }}
+                            </div>
+                            <div class="col-6">
+                                {{ section.fields.1 }}
+                            </div>
+                        </div>
+                        {% elif section.value_type_name|lower == 'datetime' %}
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label small" for="{{ section.fields.0.id_for_label }}">Lower bound</label>
+                                {{ section.fields.0 }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label small" for="{{ section.fields.1.id_for_label }}">Upper bound</label>
+                                {{ section.fields.1 }}
+                            </div>
+                        </div>
+                        {% else %}
+                            {{ section.fields.0 }}
+                        {% endif %}
+
+                        {% for field in section.fields %}
+                            {% for error in field.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                {% elif filter_form.category.value %}
+                    <p class="text-body-secondary small mb-0">This category has no additional attribute filters.</p>
+                {% else %}
+                    <p class="text-body-secondary small mb-0">Choose a category to show its category-specific attribute filters.</p>
+                {% endif %}
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button class="btn btn-primary" type="submit">Apply filters</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const categoryField = document.getElementById("id_category");
+    const filterForm = document.getElementById("search-filter-form");
+
+    if (categoryField !== null && filterForm !== null) {
+        categoryField.addEventListener("change", function () {
+            const categoryRefreshUrl = filterForm.dataset.categoryRefreshUrl;
+            const originalAction = filterForm.action;
+
+            if (categoryRefreshUrl) {
+                filterForm.action = categoryRefreshUrl;
+            }
+
+            filterForm.submit();
+            filterForm.action = originalAction;
+        });
+    }
+});
+</script>

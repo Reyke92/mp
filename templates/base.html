@@ -10,7 +10,6 @@
         <link rel="stylesheet" href="{% static 'css/styles.css' %}?v={% now 'U' %}">
     </head>
     <body>
-        <!-- Check if user is logged in in BASE.HTML -->
         {% include "includes/navbar.html" %}
         {% include "includes/categories_sidebar.html" %}
         {% block content %}

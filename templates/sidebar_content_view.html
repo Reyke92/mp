@@ -2,18 +2,26 @@
 {% block content %}
     <div class="container-fluid" min-height="500px">
         <div class="row">
+            {% if user.is_authenticated %}
             <div class="col-md-2">
                 <aside><strong>Navigation</strong>
                     <hr class="mt-0">
                     <ul class="nav nav-pills flex-column mb-auto">
-                        <li class="nav-item"><a class="nav-link link-body-emphasis" href="#">Browse</a></li>
+                        <li class="nav-item"><a class="nav-link link-body-emphasis" href="{% url 'home' %}">Home</a></li>
+                        <li class="nav-item"><a class="nav-link link-body-emphasis" href="#">My Listings</a></li>
+                        <li class="nav-item"><a class="nav-link link-body-emphasis" href="#">Create Listing</a></li>
+                        <li class="nav-item"><a class="nav-link link-body-emphasis" href="#">Messages</a></li>
+                        <li class="nav-item"><a class="nav-link link-body-emphasis" href="{% url 'profile' %}">Profile</a></li>
                     </ul>
                 </aside>
             </div>
+
             <div class="col-md-10">
-                {% block inner_content %}
+            {% else %}
+            <div class="col-md-12">
+            {% endif %}
+                {% block page_content %}
                 {% endblock %}
-                
             </div>
         </div>
     </div>

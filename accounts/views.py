@@ -14,7 +14,6 @@ from .forms import RegisterForm, LoginForm, ProfileForm
 from .models import UserProfile
 from core import storage
 from core.models import City, State
-from tracking.json_snapshots import get_snapshot, refresh_snapshot, ListingMetadataSnapshotData
 from accounts.utils.storage import copy_default_avatar_for_user
 from accounts.utils.auth import authenticate_with_email
 

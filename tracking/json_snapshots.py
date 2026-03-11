@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone as datetime_timezone
+from datetime import datetime, timezone as datetime_timezone, timedelta
 from decimal import Decimal
 from typing import Any, Optional
 
@@ -74,16 +74,32 @@ def get_snapshot(listing_id: int) -> ListingMetadataSnapshotData:
 
     If the snapshot row does not exist yet, this function compiles it first
     from normalized source-of-truth data.
+
+    If the snapshot is older than 24 hours, it is refreshed automatically.
     """
     try:
         snapshot: ListingMetadataSnapshot = ListingMetadataSnapshot.objects.only(
-            "compiled_json"
+            "compiled_json",
+            "compiled_at",
         ).get(listing_id=listing_id)
     except ListingMetadataSnapshot.DoesNotExist:
         refresh_snapshot(listing_id)
-        snapshot = ListingMetadataSnapshot.objects.only("compiled_json").get(
-            listing_id=listing_id
-        )
+        snapshot = ListingMetadataSnapshot.objects.only(
+            "compiled_json",
+            "compiled_at",
+        ).get(listing_id=listing_id)
+
+    is_stale: bool = (
+        snapshot.compiled_at is None
+        or snapshot.compiled_at < timezone.now() - timedelta(hours=24)
+    )
+
+    if is_stale:
+        refresh_snapshot(listing_id)
+        snapshot = ListingMetadataSnapshot.objects.only(
+            "compiled_json",
+            "compiled_at",
+        ).get(listing_id=listing_id)
 
     compiled_json: Any = snapshot.compiled_json
     if isinstance(compiled_json, str):
@@ -127,7 +143,7 @@ def _build_snapshot_data(listing_id: int) -> ListingMetadataSnapshotData:
         StateCode=str(listing_row["state_code"]),
         UpdatedAt=_datetime_to_snapshot_string(listing_row["updated_at"]),
         Attributes=attributes,
-        Image=primary_image_url,
+        Image=f"/{primary_image_url}",
         PriceAmount=_decimal_to_float(listing_row["price_amount"]),
         CategoryName=str(listing_row["category_name"]),
     )

@@ -1,0 +1,36 @@
+<div class="category-node depth-{{ depth }}{% if depth == 0 %} mb-2{% else %} mt-2{% endif %}">
+    <div class="category-row{% if category.is_active %} is-active{% endif %}">
+        <a class="category-link{% if category.is_active %} active{% endif %}" href="{{ category.url }}">
+            <span>{{ category.name }}</span>
+            {% if category.is_active %}
+            <span class="badge text-bg-primary ms-2">Current</span>
+            {% endif %}
+        </a>
+
+        {% if category.has_children %}
+        <button
+            class="btn btn-sm category-toggle"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#{{ category.collapse_id }}"
+            aria-expanded="{% if category.is_open %}true{% else %}false{% endif %}"
+            aria-controls="{{ category.collapse_id }}"
+            aria-label="Toggle {{ category.name }} subcategories"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"></path>
+            </svg>
+        </button>
+        {% endif %}
+    </div>
+
+    {% if category.has_children %}
+    <div class="collapse{% if category.is_open %} show{% endif %}" id="{{ category.collapse_id }}">
+        <div class="category-children">
+            {% for child in category.children %}
+                {% include 'includes/partials/category_sidebar_node.html' with category=child depth=depth|add:1 %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>

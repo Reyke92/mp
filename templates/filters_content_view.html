@@ -1,0 +1,16 @@
+{% extends 'sidebar_content_view.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-3">
+    {% block filter_menu_with_content %}
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-lg-4 col-xl-3">
+            {% block filter_menu %}{% endblock %}
+        </div>
+        <div class="col-12 col-lg-8 col-xl-9">
+            {% block inner_content %}{% endblock %}
+        </div>
+    </div>
+    {% endblock %}
+</div>
+{% endblock %}
