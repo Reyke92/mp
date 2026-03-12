@@ -3,12 +3,22 @@
 
 {% block page_content %}
 <div class="container-fluid py-3 create-listing-page">
-    <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-2 mb-4">
+    <div class="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-3 mb-4">
         <div>
-            <h1 class="h2 mb-1">{{ page_title }}</h1>
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <h1 class="h2 mb-0">{{ page_title }}</h1>
+                <span class="listing-status-badge {% if listing.status.status_name|lower == 'active' %}status-active{% elif listing.status.status_name|lower == 'frozen' %}status-frozen{% else %}status-deleted{% endif %}">Status: {{ listing.status.status_name }}</span>
+            </div>
             <p class="text-body-secondary mb-0">{{ page_description }}</p>
         </div>
-        <div class="small text-body-secondary">{{ page_hint }}</div>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary" href="{% url 'listing_detail' listing.listing_id %}">View Listing</a>
+            <a class="btn btn-outline-secondary" href="{% url secondary_button_url secondary_button_listing_id %}">{{ secondary_button_label }}</a>
+            <form method="post" action="{% url 'delete_listing' listing.listing_id %}" data-delete-listing-form="true">
+                {% csrf_token %}
+                <button class="btn btn-outline-danger" type="submit">Delete Listing</button>
+            </form>
+        </div>
     </div>
 
     <form
@@ -38,7 +48,7 @@
                         <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
                             <div>
                                 <h2 class="h4 mb-1">Core details</h2>
-                                <p class="text-body-secondary mb-0 small">Start with the basics shoppers look for first.</p>
+                                <p class="text-body-secondary mb-0 small">Review the details shoppers notice first and update anything that changed.</p>
                             </div>
                         </div>
 
@@ -96,7 +106,7 @@
                 </div>
 
                 <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end pb-4">
-                    <a class="btn btn-outline-secondary btn-lg" href="{% url secondary_button_url %}">{{ secondary_button_label }}</a>
+                    <a class="btn btn-outline-secondary btn-lg" href="{% url secondary_button_url secondary_button_listing_id %}">{{ secondary_button_label }}</a>
                     <button class="btn btn-primary btn-lg" id="save-listing-button" type="submit">{{ primary_button_label }}</button>
                 </div>
             </div>
@@ -107,13 +117,13 @@
                         <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
                             <div>
                                 <h2 class="h4 mb-1">Images</h2>
-                                <p class="text-body-secondary mb-0 small">Add clear photos and arrange them in the order you want shoppers to see them.</p>
+                                <p class="text-body-secondary mb-0 small">Keep your photos in the right order, remove old ones, or add new ones before saving.</p>
                             </div>
                         </div>
 
                         <div class="mb-3">
                             {{ form.images|as_crispy_field }}
-                            <div class="form-text mt-1">Supported formats: JPG, PNG, and WEBP. You can arrange the photo order here before saving.</div>
+                            <div class="form-text mt-1">Supported formats: JPG, PNG, and WEBP. New photos stay on this device until you press Save Changes.</div>
                         </div>
 
                         <div class="d-flex flex-wrap gap-2 mb-3">

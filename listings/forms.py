@@ -163,7 +163,7 @@ class CreateListingForm(forms.Form):
         self.helper.form_tag = False
         self.helper.form_method = "post"
         self.helper.attrs = {
-            "id": "create-listing-form",
+            "id": "listing-editor-form",
         }
 
     def clean_title(self) -> str:
@@ -227,15 +227,7 @@ class CreateListingForm(forms.Form):
 
     def _get_selected_category_id(self) -> int | None:
         raw_value: Any = self.data.get("category") if self.is_bound else self.initial.get("category")
-        if raw_value in {None, ""}:
-            return None
-
-        try:
-            parsed_value: int = int(raw_value)
-        except (TypeError, ValueError):
-            return None
-
-        return parsed_value if parsed_value > 0 else None
+        return self._parse_optional_db_id(raw_value)
 
     def _build_leaf_category_choices(self) -> list[tuple[Any, str]]:
         category_rows: list[tuple[int, str, int | None]] = list(
@@ -383,3 +375,12 @@ class CreateListingForm(forms.Form):
         if normalized_value == "":
             return None
         return normalized_value == "true"
+
+    @staticmethod
+    def _parse_optional_db_id(raw_value: Any) -> int | None:
+        if raw_value in {None, ""}:
+            return None
+        try:
+            return int(raw_value)
+        except (TypeError, ValueError):
+            return None

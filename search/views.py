@@ -22,7 +22,7 @@ def search_view(request: HttpRequest) -> HttpResponse:
     if context["search_term"]:
         context["page_description"] = f"Showing results for “{context['search_term']}”."
     else:
-        context["page_description"] = "Browse public listings with filters and category-specific attributes."
+        context["page_description"] = "Browse public listings, narrow the results, and compare the details that matter most."
     context["empty_state_title"] = "No results"
     context["empty_state_description"] = (
         "No public listings matched the current keyword and filters. "
