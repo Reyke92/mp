@@ -143,7 +143,7 @@ def _build_snapshot_data(listing_id: int) -> ListingMetadataSnapshotData:
         StateCode=str(listing_row["state_code"]),
         UpdatedAt=_datetime_to_snapshot_string(listing_row["updated_at"]),
         Attributes=attributes,
-        Image=f"/{primary_image_url}",
+        Image=None if primary_image_url is None else f"/{primary_image_url}",
         PriceAmount=_decimal_to_float(listing_row["price_amount"]),
         CategoryName=str(listing_row["category_name"]),
     )

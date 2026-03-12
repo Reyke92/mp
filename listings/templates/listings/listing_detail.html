@@ -1,0 +1,78 @@
+{% extends 'sidebar_content_view.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-3">
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-xl-7">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-3">
+                        <div>
+                            <div class="small text-body-secondary mb-1">{{ detail.snapshot.CategoryName }} · {{ detail.snapshot.Condition }}</div>
+                            <h1 class="h2 mb-1">{{ detail.snapshot.Title }}</h1>
+                            <div class="text-body-secondary">{{ detail.snapshot.CityName }}, {{ detail.snapshot.StateCode }}</div>
+                        </div>
+                        <div class="text-md-end">
+                            <div class="display-6 fw-semibold mb-1">${{ detail.snapshot.PriceAmount|floatformat:2 }}</div>
+                            <span class="badge text-bg-light border">{{ detail.listing.status.status_name }}</span>
+                        </div>
+                    </div>
+
+                    {% if detail.images %}
+                    <div class="row g-3 mb-3">
+                        {% for image in detail.images %}
+                        <div class="col-12 col-md-6">
+                            <img class="img-fluid rounded-4 w-100 border" src="/{{ image.image_url }}" alt="{{ detail.snapshot.Title }} image {{ forloop.counter }}">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="rounded-4 border bg-body-tertiary p-4 text-body-secondary mb-3">No images were uploaded for this listing.</div>
+                    {% endif %}
+
+                    <h2 class="h4 mb-2">Description</h2>
+                    <p class="mb-0" style="white-space: pre-wrap;">{{ detail.listing.description }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Item details</h2>
+                    <dl class="row mb-0">
+                        <dt class="col-5">Condition</dt>
+                        <dd class="col-7">{{ detail.snapshot.Condition }}</dd>
+                        <dt class="col-5">Category</dt>
+                        <dd class="col-7">{{ detail.snapshot.CategoryName }}</dd>
+                        <dt class="col-5">Location</dt>
+                        <dd class="col-7">{{ detail.snapshot.CityName }}, {{ detail.snapshot.StateCode }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Category attributes</h2>
+                    {% if detail.attributes %}
+                    <dl class="row mb-0">
+                        {% for row in detail.attributes %}
+                        <dt class="col-6">{{ row.label }}</dt>
+                        <dd class="col-6">{{ row.value }}</dd>
+                        {% endfor %}
+                    </dl>
+                    {% else %}
+                    <div class="text-body-secondary">No additional category attributes were stored.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if user.is_authenticated and detail.can_edit %}
+            <div class="d-grid">
+                <a class="btn btn-outline-secondary" href="{% url 'my_listings' %}">Back to My Listings</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% load crispy_forms_tags %}
+
+{% if attribute_sections %}
+<div class="row g-3">
+    {% for section in attribute_sections %}
+    <div class="col-12 col-lg-6">
+        {% if section.value_type_name|lower == 'boolean' %}
+        <div class="create-listing-attribute-card h-100">
+            <label class="form-label d-block mb-2">{{ section.label }}</label>
+            <div class="create-listing-bool-toggle" role="radiogroup" aria-label="{{ section.label }}">
+                {% for choice in section.fields.0 %}
+                <div class="create-listing-bool-option">
+                    {{ choice.tag }}
+                    <label class="btn btn-outline-secondary" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+            {% for error in section.fields.0.errors %}
+            <div class="text-danger small mt-2">{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% else %}
+            {{ section.fields.0|as_crispy_field }}
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% elif has_selected_category %}
+<div class="rounded-4 border bg-body-tertiary p-3 text-body-secondary small">
+    This category does not define any additional attributes.
+</div>
+{% else %}
+<div class="rounded-4 border bg-body-tertiary p-3 text-body-secondary small">
+    Choose a category to load its category-specific attributes.
+</div>
+{% endif %}

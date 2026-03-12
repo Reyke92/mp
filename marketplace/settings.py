@@ -89,12 +89,18 @@ WSGI_APPLICATION = 'marketplace.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', 
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'mp',
         'USER': 'dbadmin',
         'PASSWORD': 'Secure_db_admin_password16',
-        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
+        'HOST': 'localhost',
         'PORT': '3306',
+        'OPTIONS': {
+            'init_command': (
+                "SET SESSION sql_mode = "
+                "CONCAT(@@SESSION.sql_mode, ',NO_AUTO_VALUE_ON_ZERO')"
+            ),
+        },
     }
 }
 

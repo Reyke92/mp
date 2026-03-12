@@ -1,0 +1,422 @@
+{% extends 'sidebar_content_view.html' %}
+{% load crispy_forms_tags %}
+
+{% block page_content %}
+<div class="container-fluid py-3 create-listing-page">
+    <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-2 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Create Listing</h1>
+            <p class="text-body-secondary mb-0">
+                Enter the listing details, upload images, and fill in the category-specific attributes on one page.
+            </p>
+        </div>
+        <div class="small text-body-secondary">
+            Images stay in the browser until you press <strong>Save Listing</strong>.
+        </div>
+    </div>
+
+    <form
+        id="create-listing-form"
+        method="post"
+        enctype="multipart/form-data"
+        data-attribute-fields-url="{% url 'create_listing_attribute_fields' %}"
+        data-state-cities-url="{% url 'state_cities' %}"
+    >
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-3">
+            {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="row g-4 align-items-start">
+            <div class="col-12 col-xl-8">
+                <div class="card shadow-sm border-0 create-listing-card mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <div>
+                                <h2 class="h4 mb-1">Core details</h2>
+                                <p class="text-body-secondary mb-0 small">Start with the fields buyers expect first.</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-8">
+                                {{ form.title|as_crispy_field }}
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                {{ form.price_amount|as_crispy_field }}
+                            </div>
+                            <div class="col-12 col-lg-7">
+                                {{ form.category|as_crispy_field }}
+                                <div class="form-text mt-1">Only specific child categories are allowed so search and filtering stay precise.</div>
+                            </div>
+                            <div class="col-12 col-lg-5">
+                                {{ form.condition|as_crispy_field }}
+                            </div>
+                            <div class="col-12 col-lg-7">
+                                {{ form.city_name|as_crispy_field }}
+                                <datalist id="city-suggestions">
+                                    {% for city_name in city_suggestions %}
+                                    <option value="{{ city_name }}"></option>
+                                    {% endfor %}
+                                </datalist>
+                                <div class="form-text mt-1">The city must exist in the selected state.</div>
+                            </div>
+                            <div class="col-12 col-lg-5">
+                                {{ form.state|as_crispy_field }}
+                            </div>
+                            <div class="col-12">
+                                {{ form.description|as_crispy_field }}
+                                <div class="d-flex justify-content-between small text-body-secondary mt-1">
+                                    <span>Minimum {{ form.description.field.min_length }} characters.</span>
+                                    <span id="description-character-count">0 / {{ form.description.field.max_length }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 create-listing-card mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <div>
+                                <h2 class="h4 mb-1">Category attributes</h2>
+                                <p class="text-body-secondary mb-0 small">These fields refresh automatically when the category changes.</p>
+                            </div>
+                            <div class="small text-body-secondary text-end">No background upload is used.</div>
+                        </div>
+
+                        <div id="category-attributes-region">
+                            {% include 'listings/partials/create_listing_attribute_fields.html' with attribute_sections=attribute_sections has_selected_category=form.category.value %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end pb-4">
+                    <a class="btn btn-outline-secondary btn-lg" href="{% url 'home' %}">Cancel</a>
+                    <button class="btn btn-primary btn-lg" id="save-listing-button" type="submit">Save Listing</button>
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="card shadow-sm border-0 create-listing-card create-listing-sticky-panel">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between gap-3 mb-3">
+                            <div>
+                                <h2 class="h4 mb-1">Images</h2>
+                                <p class="text-body-secondary mb-0 small">Add, reorder, and remove images before submitting.</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.images|as_crispy_field }}
+                            <div class="form-text mt-1">Supported formats: JPG, PNG, and WEBP. Reordering happens entirely in the browser.</div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <button class="btn btn-outline-primary btn-sm" id="open-image-picker-button" type="button">Choose images</button>
+                            <button class="btn btn-outline-secondary btn-sm" id="clear-image-list-button" type="button">Clear all</button>
+                        </div>
+
+                        <div class="create-listing-image-list" id="listing-image-list" aria-live="polite">
+                            <div class="text-body-secondary small" id="listing-image-empty-state">
+                                No images selected yet.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const formElement = document.getElementById("create-listing-form");
+    const categoryField = document.getElementById("id_category");
+    const stateField = document.getElementById("id_state");
+    const cityField = document.getElementById("id_city_name");
+    const citySuggestionsElement = document.getElementById("city-suggestions");
+    const attributeRegion = document.getElementById("category-attributes-region");
+    const descriptionField = document.getElementById("id_description");
+    const descriptionCharacterCountElement = document.getElementById("description-character-count");
+    const imageInput = document.getElementById("id_images");
+    const imageListElement = document.getElementById("listing-image-list");
+    const imageEmptyStateElement = document.getElementById("listing-image-empty-state");
+    const openImagePickerButton = document.getElementById("open-image-picker-button");
+    const clearImageListButton = document.getElementById("clear-image-list-button");
+
+    const imageState = {
+        files: [],
+    };
+
+    function syncDescriptionCount() {
+        if (descriptionField === null || descriptionCharacterCountElement === null) {
+            return;
+        }
+        descriptionCharacterCountElement.textContent = `${descriptionField.value.length} / ${descriptionField.getAttribute("maxlength")}`;
+    }
+
+    async function refreshCategoryAttributes() {
+        if (categoryField === null || attributeRegion === null || formElement === null) {
+            return;
+        }
+
+        const categoryValue = categoryField.value;
+        const url = new URL(formElement.dataset.attributeFieldsUrl, window.location.origin);
+        if (categoryValue !== "") {
+            url.searchParams.set("category", categoryValue);
+        }
+
+        const response = await fetch(url, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            credentials: "same-origin",
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        attributeRegion.innerHTML = await response.text();
+    }
+
+    async function refreshCitySuggestions() {
+        if (stateField === null || citySuggestionsElement === null || formElement === null) {
+            return;
+        }
+
+        citySuggestionsElement.innerHTML = "";
+        const stateId = stateField.value;
+        if (stateId === "") {
+            return;
+        }
+
+        const url = new URL(formElement.dataset.stateCitiesUrl, window.location.origin);
+        url.searchParams.set("state_id", stateId);
+
+        const response = await fetch(url, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            credentials: "same-origin",
+        });
+
+        if (!response.ok) {
+            return;
+        }
+
+        const payload = await response.json();
+        const cities = Array.isArray(payload.cities) ? payload.cities : [];
+        for (const cityName of cities) {
+            const optionElement = document.createElement("option");
+            optionElement.value = cityName;
+            citySuggestionsElement.appendChild(optionElement);
+        }
+    }
+
+    function validateCityAgainstSuggestions() {
+        if (cityField === null || citySuggestionsElement === null || stateField === null) {
+            return true;
+        }
+
+        const cityValue = cityField.value.trim().toLowerCase();
+        if (cityValue === "" || stateField.value === "") {
+            cityField.setCustomValidity("");
+            return true;
+        }
+
+        const knownCityValues = Array.from(citySuggestionsElement.querySelectorAll("option")).map(function (optionElement) {
+            return optionElement.value.trim().toLowerCase();
+        });
+
+        if (knownCityValues.length === 0 || knownCityValues.includes(cityValue)) {
+            cityField.setCustomValidity("");
+            return true;
+        }
+
+        cityField.setCustomValidity("Choose a city that exists in the selected state.");
+        return false;
+    }
+
+    function syncImageInput() {
+        if (imageInput === null) {
+            return;
+        }
+
+        const dataTransfer = new DataTransfer();
+        for (const file of imageState.files) {
+            dataTransfer.items.add(file);
+        }
+        imageInput.files = dataTransfer.files;
+    }
+
+    function dedupeKey(file) {
+        return `${file.name}::${file.size}::${file.lastModified}`;
+    }
+
+    function renderImageList() {
+        if (imageListElement === null || imageEmptyStateElement === null) {
+            return;
+        }
+
+        imageListElement.querySelectorAll(".image-preview-row").forEach(function (element) {
+            element.remove();
+        });
+
+        imageEmptyStateElement.classList.toggle("d-none", imageState.files.length > 0);
+
+        imageState.files.forEach(function (file, index) {
+            const rowElement = document.createElement("div");
+            rowElement.className = "image-preview-row";
+
+            const thumbnailElement = document.createElement("img");
+            thumbnailElement.className = "image-preview-thumb";
+            thumbnailElement.alt = file.name;
+            thumbnailElement.src = URL.createObjectURL(file);
+
+            const infoElement = document.createElement("div");
+            infoElement.className = "image-preview-info";
+
+            const titleElement = document.createElement("div");
+            titleElement.className = "fw-semibold text-truncate";
+            titleElement.textContent = `${index + 1}. ${file.name}`;
+
+            const metaElement = document.createElement("div");
+            metaElement.className = "small text-body-secondary";
+            metaElement.textContent = `${Math.max(1, Math.round(file.size / 1024))} KB`;
+
+            infoElement.appendChild(titleElement);
+            infoElement.appendChild(metaElement);
+
+            const actionGroupElement = document.createElement("div");
+            actionGroupElement.className = "image-preview-actions";
+
+            const upButton = document.createElement("button");
+            upButton.type = "button";
+            upButton.className = "btn btn-outline-secondary btn-sm";
+            upButton.textContent = "Up";
+            upButton.disabled = index === 0;
+            upButton.addEventListener("click", function () {
+                if (index === 0) {
+                    return;
+                }
+                const currentFile = imageState.files[index];
+                imageState.files[index] = imageState.files[index - 1];
+                imageState.files[index - 1] = currentFile;
+                syncImageInput();
+                renderImageList();
+            });
+
+            const downButton = document.createElement("button");
+            downButton.type = "button";
+            downButton.className = "btn btn-outline-secondary btn-sm";
+            downButton.textContent = "Down";
+            downButton.disabled = index === imageState.files.length - 1;
+            downButton.addEventListener("click", function () {
+                if (index >= imageState.files.length - 1) {
+                    return;
+                }
+                const currentFile = imageState.files[index];
+                imageState.files[index] = imageState.files[index + 1];
+                imageState.files[index + 1] = currentFile;
+                syncImageInput();
+                renderImageList();
+            });
+
+            const removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.className = "btn btn-outline-danger btn-sm";
+            removeButton.textContent = "Remove";
+            removeButton.addEventListener("click", function () {
+                imageState.files.splice(index, 1);
+                syncImageInput();
+                renderImageList();
+            });
+
+            actionGroupElement.appendChild(upButton);
+            actionGroupElement.appendChild(downButton);
+            actionGroupElement.appendChild(removeButton);
+
+            rowElement.appendChild(thumbnailElement);
+            rowElement.appendChild(infoElement);
+            rowElement.appendChild(actionGroupElement);
+            imageListElement.appendChild(rowElement);
+        });
+    }
+
+    if (descriptionField !== null) {
+        syncDescriptionCount();
+        descriptionField.addEventListener("input", syncDescriptionCount);
+    }
+
+    if (categoryField !== null) {
+        categoryField.addEventListener("change", refreshCategoryAttributes);
+    }
+
+    if (stateField !== null) {
+        stateField.addEventListener("change", function () {
+            if (cityField !== null) {
+                cityField.value = "";
+                cityField.setCustomValidity("");
+            }
+            refreshCitySuggestions();
+        });
+    }
+
+    if (cityField !== null) {
+        cityField.addEventListener("input", validateCityAgainstSuggestions);
+        cityField.addEventListener("change", validateCityAgainstSuggestions);
+    }
+
+    if (imageInput !== null) {
+        imageInput.addEventListener("change", function () {
+            const newFiles = Array.from(imageInput.files || []);
+            const existingKeys = new Set(imageState.files.map(dedupeKey));
+            for (const file of newFiles) {
+                const key = dedupeKey(file);
+                if (!existingKeys.has(key)) {
+                    imageState.files.push(file);
+                    existingKeys.add(key);
+                }
+            }
+            syncImageInput();
+            renderImageList();
+        });
+    }
+
+    if (openImagePickerButton !== null && imageInput !== null) {
+        openImagePickerButton.addEventListener("click", function () {
+            imageInput.click();
+        });
+    }
+
+    if (clearImageListButton !== null) {
+        clearImageListButton.addEventListener("click", function () {
+            imageState.files = [];
+            syncImageInput();
+            renderImageList();
+        });
+    }
+
+    if (formElement !== null) {
+        formElement.addEventListener("submit", function (event) {
+            if (!validateCityAgainstSuggestions()) {
+                event.preventDefault();
+                if (cityField !== null) {
+                    cityField.reportValidity();
+                }
+            }
+        });
+    }
+
+    refreshCitySuggestions();
+    renderImageList();
+});
+</script>
+{% endblock %}
