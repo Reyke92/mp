@@ -112,3 +112,121 @@
     padding-left: 0.75rem;
   }
 }
+
+.sidebar-nav-card .nav-link {
+  border-radius: 0.9rem;
+  border: 1px solid var(--bs-border-color);
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+}
+
+.sidebar-nav-card .nav-link:hover,
+.sidebar-nav-card .nav-link:focus {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+
+.sidebar-nav-card .nav-link.active {
+  background-color: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary);
+  color: var(--bs-emphasis-color);
+}
+
+.create-listing-card {
+  border-radius: 1.25rem;
+}
+
+.create-listing-sticky-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+.create-listing-image-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.image-preview-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 1rem;
+  background-color: var(--bs-body-bg);
+}
+
+.image-preview-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 0.9rem;
+  object-fit: cover;
+  border: 1px solid var(--bs-border-color);
+}
+
+.image-preview-info {
+  min-width: 0;
+}
+
+.image-preview-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+
+.create-listing-bool-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.create-listing-bool-option {
+  position: relative;
+}
+
+.create-listing-bool-toggle .btn-check {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.create-listing-bool-toggle .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: calc(1.5em + 1rem + 2px);
+  border-radius: 0.9rem !important;
+}
+
+.create-listing-bool-toggle .btn-check:checked + .btn,
+.create-listing-bool-toggle .btn:hover,
+.create-listing-bool-toggle .btn:focus {
+  z-index: 0;
+}
+
+@media (max-width: 575.98px) {
+  .create-listing-bool-toggle {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  .create-listing-sticky-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .image-preview-row {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .image-preview-thumb {
+    width: 56px;
+    height: 56px;
+  }
+}

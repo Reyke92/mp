@@ -21,8 +21,8 @@ class Listing(models.Model):
     price_amount = models.DecimalField(max_digits=12, decimal_places=2, db_column='price_amount')
     status = models.ForeignKey('listings.ListingStatus', models.RESTRICT, db_column='status_id')
     created_at = models.DateTimeField(default=timezone.now, db_column='created_at')
-    updated_at = models.DateTimeField(null=True, blank=True, default='NULL ON UPDATE CURRENT_TIMESTAMP', db_column='updated_at')
-    view_count = models.BigIntegerField(validators=[MinValueValidator(0)], default='0', db_column='view_count')
+    updated_at = models.DateTimeField(null=True, blank=True, db_column='updated_at')
+    view_count = models.BigIntegerField(validators=[MinValueValidator(0)], default=0, db_column='view_count')
 
     class Meta:
         managed = True
@@ -58,11 +58,11 @@ class ListingAttributeValue(models.Model):
     id = models.BigAutoField(primary_key=True, db_column='id')
     listing = models.ForeignKey('listings.Listing', models.CASCADE, db_column='listing_id')
     attribute = models.ForeignKey('catalog.Attribute', models.RESTRICT, db_column='attribute_id')
-    value_int = models.BigIntegerField(null=True, blank=True, default='NULL', db_column='value_int')
-    value_decimal = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, default='NULL', db_column='value_decimal')
-    value_datetime = models.DateTimeField(null=True, blank=True, default='NULL', db_column='value_datetime')
+    value_int = models.BigIntegerField(null=True, blank=True, default=None, db_column='value_int')
+    value_decimal = models.DecimalField(max_digits=18, decimal_places=6, null=True, blank=True, default=None, db_column='value_decimal')
+    value_datetime = models.DateTimeField(null=True, blank=True, default=None, db_column='value_datetime')
     value_text = models.ForeignKey('catalog.AllowedAttributeValue', models.RESTRICT, null=True, blank=True, db_column='value_text_id')
-    value_bool = models.BooleanField(null=True, blank=True, default='NULL', db_column='value_bool')
+    value_bool = models.BooleanField(null=True, blank=True, default=None, db_column='value_bool')
 
     class Meta:
         managed = True

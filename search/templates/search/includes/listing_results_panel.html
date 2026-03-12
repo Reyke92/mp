@@ -28,7 +28,7 @@
                 <div class="small mb-2">{{ result.category_name }} · {{ result.condition_name }}</div>
                 <div class="fw-semibold fs-5 mb-3">${{ result.price_amount|floatformat:2 }}</div>
                 <div class="mt-auto">
-                    <a class="btn btn-outline-primary w-100" href="#">View Listing</a>
+                    <a class="btn btn-outline-primary w-100" href="{% url 'listing_detail' result.listing_id %}">View Listing</a>
                 </div>
             </div>
         </div>

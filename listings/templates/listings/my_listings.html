@@ -1,0 +1,55 @@
+{% extends 'sidebar_content_view.html' %}
+
+{% block page_content %}
+<div class="container-fluid py-3">
+    <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-2 mb-4">
+        <div>
+            <h1 class="h2 mb-1">My Listings</h1>
+            <p class="text-body-secondary mb-0">Manage the listings you created and review their current status.</p>
+        </div>
+        <a class="btn btn-primary" href="{% url 'create_listing' %}">Create Listing</a>
+    </div>
+
+    {% if rows %}
+    <div class="row g-3">
+        {% for row in rows %}
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="row g-0 h-100">
+                    <div class="col-4 col-md-3">
+                        {% if row.primary_image_url %}
+                        <img class="img-fluid h-100 w-100 rounded-start object-fit-cover" src="{{ row.primary_image_url }}" alt="{{ row.title }}">
+                        {% else %}
+                        <div class="h-100 d-flex align-items-center justify-content-center text-body-secondary bg-body-tertiary rounded-start small px-2 text-center">No image</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-8 col-md-9">
+                        <div class="card-body h-100 d-flex flex-column">
+                            <div class="d-flex justify-content-between gap-2 align-items-start mb-2">
+                                <h2 class="h5 mb-0">{{ row.title }}</h2>
+                                <span class="badge text-bg-light border">{{ row.status_name }}</span>
+                            </div>
+                            <div class="small text-body-secondary mb-2">{{ row.city_name }}, {{ row.state_code }}</div>
+                            <div class="fw-semibold mb-3">${{ row.price_amount|floatformat:2 }}</div>
+                            <div class="small text-body-secondary mb-3">Views: {{ row.view_count }}</div>
+                            <div class="mt-auto d-flex gap-2">
+                                <a class="btn btn-outline-primary btn-sm" href="{% url 'listing_detail' row.listing_id %}">View Listing</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <h2 class="h4 mb-2">No listings yet</h2>
+            <p class="text-body-secondary mb-3">Create your first listing to start appearing in marketplace search results.</p>
+            <a class="btn btn-primary" href="{% url 'create_listing' %}">Create Listing</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
