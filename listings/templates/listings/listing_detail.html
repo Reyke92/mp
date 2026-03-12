@@ -1,78 +1,199 @@
 {% extends 'sidebar_content_view.html' %}
+{% load static %}
 
 {% block page_content %}
-<div class="container-fluid py-3">
-    <div class="row g-4 align-items-start">
-        <div class="col-12 col-xl-7">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body p-4">
-                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-3">
-                        <div>
-                            <div class="small text-body-secondary mb-1">{{ detail.snapshot.CategoryName }} · {{ detail.snapshot.Condition }}</div>
-                            <h1 class="h2 mb-1">{{ detail.snapshot.Title }}</h1>
-                            <div class="text-body-secondary">{{ detail.snapshot.CityName }}, {{ detail.snapshot.StateCode }}</div>
-                        </div>
-                        <div class="text-md-end">
-                            <div class="display-6 fw-semibold mb-1">${{ detail.snapshot.PriceAmount|floatformat:2 }}</div>
-                            <span class="badge text-bg-light border">{{ detail.listing.status.status_name }}</span>
-                        </div>
+<div class="container-fluid py-3 listing-detail-page">
+    <div class="card shadow-sm border-0 listing-detail-hero mb-4">
+        <div class="card-body p-4 p-xxl-5">
+            <div class="d-flex flex-column flex-xxl-row justify-content-between gap-4">
+                <div>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="marketplace-chip">{{ detail.snapshot.CategoryName }}</span>
+                        <span class="marketplace-chip">{{ detail.snapshot.Condition }}</span>
+                        <span class="listing-status-badge {% if detail.listing.status.status_name|lower == 'active' %}status-active{% elif detail.listing.status.status_name|lower == 'frozen' %}status-frozen{% else %}status-deleted{% endif %}">Status: {{ detail.listing.status.status_name }}</span>
                     </div>
-
-                    {% if detail.images %}
-                    <div class="row g-3 mb-3">
-                        {% for image in detail.images %}
-                        <div class="col-12 col-md-6">
-                            <img class="img-fluid rounded-4 w-100 border" src="/{{ image.image_url }}" alt="{{ detail.snapshot.Title }} image {{ forloop.counter }}">
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="rounded-4 border bg-body-tertiary p-4 text-body-secondary mb-3">No images were uploaded for this listing.</div>
-                    {% endif %}
-
-                    <h2 class="h4 mb-2">Description</h2>
-                    <p class="mb-0" style="white-space: pre-wrap;">{{ detail.listing.description }}</p>
+                    <h1 class="display-6 fw-semibold mb-2">{{ detail.snapshot.Title }}</h1>
+                    <p class="text-body-secondary mb-0 listing-detail-lede">
+                        Take a closer look at the photos, description, and item details below. Marketplace exchanges are arranged offline.
+                    </p>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-xl-5">
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body p-4">
-                    <h2 class="h4 mb-3">Item details</h2>
-                    <dl class="row mb-0">
-                        <dt class="col-5">Condition</dt>
-                        <dd class="col-7">{{ detail.snapshot.Condition }}</dd>
-                        <dt class="col-5">Category</dt>
-                        <dd class="col-7">{{ detail.snapshot.CategoryName }}</dd>
-                        <dt class="col-5">Location</dt>
-                        <dd class="col-7">{{ detail.snapshot.CityName }}, {{ detail.snapshot.StateCode }}</dd>
-                    </dl>
-                </div>
-            </div>
-
-            <div class="card shadow-sm border-0 mb-4">
-                <div class="card-body p-4">
-                    <h2 class="h4 mb-3">Category attributes</h2>
-                    {% if detail.attributes %}
-                    <dl class="row mb-0">
-                        {% for row in detail.attributes %}
-                        <dt class="col-6">{{ row.label }}</dt>
-                        <dd class="col-6">{{ row.value }}</dd>
-                        {% endfor %}
-                    </dl>
-                    {% else %}
-                    <div class="text-body-secondary">No additional category attributes were stored.</div>
+                <div class="text-xxl-end align-self-start">
+                    <div class="listing-detail-price mb-2">${{ detail.snapshot.PriceAmount|floatformat:2 }}</div>
+                    <div class="text-body-secondary mb-1">{{ detail.snapshot.CityName }}, {{ detail.snapshot.StateCode }}</div>
+                    {% if detail.show_view_count %}
+                    <div class="small text-body-secondary">Views: {{ detail.listing.view_count }}</div>
                     {% endif %}
                 </div>
             </div>
 
-            {% if user.is_authenticated and detail.can_edit %}
-            <div class="d-grid">
-                <a class="btn btn-outline-secondary" href="{% url 'my_listings' %}">Back to My Listings</a>
+            {% if detail.visibility_message %}
+            <div class="alert alert-warning border-0 mt-4 mb-0" role="alert">
+                {{ detail.visibility_message }}
             </div>
             {% endif %}
         </div>
     </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-12 col-xl-8">
+            <div class="card shadow-sm border-0 listing-detail-card mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-3">
+                        <div>
+                            <h2 class="h4 mb-1">Photos</h2>
+                            <p class="text-body-secondary mb-0 small">Choose a thumbnail to preview another photo, or open any image for a closer look.</p>
+                        </div>
+                        <button class="btn btn-outline-secondary align-self-start d-none" id="listing-gallery-open-modal-button" type="button">
+                            View full size
+                        </button>
+                    </div>
+
+                    <div class="listing-gallery" id="listing-detail-gallery">
+                        <div class="listing-gallery-empty rounded-4 border bg-body-tertiary p-5 text-center text-body-secondary{% if gallery_images_payload %} d-none{% endif %}" id="listing-gallery-empty-state">
+                            No images were uploaded for this listing.
+                        </div>
+                        <div class="listing-gallery-focus-region{% if not gallery_images_payload %} d-none{% endif %}" id="listing-gallery-focus-region"></div>
+                        <div class="listing-gallery-thumbnail-region{% if not gallery_images_payload %} d-none{% endif %}" id="listing-gallery-thumbnail-region"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 listing-detail-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-3">Description</h2>
+                    <p class="mb-0 listing-detail-description" style="white-space: pre-wrap;">{{ detail.listing.description }}</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 listing-detail-card">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 mb-3">
+                        <div>
+                            <h2 class="h4 mb-1">Category attributes</h2>
+                            <p class="text-body-secondary mb-0 small">A few extra item details can make it easier to decide whether this listing is the right match.</p>
+                        </div>
+                    </div>
+                    {% if detail.attributes %}
+                    <div class="row g-3">
+                        {% for row in detail.attributes %}
+                        <div class="col-12 col-md-6">
+                            <div class="listing-detail-attribute-pill h-100">
+                                <div class="small text-body-secondary mb-1">{{ row.label }}</div>
+                                <div class="fw-semibold">{{ row.value }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-body-secondary">This seller did not add additional item details for this listing.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <div class="listing-detail-sidebar-sticky">
+                <div class="card shadow-sm border-0 listing-detail-card mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-3">Listing summary</h2>
+                        <dl class="row mb-0 listing-detail-summary-grid">
+                            <dt class="col-5">Category</dt>
+                            <dd class="col-7">{{ detail.snapshot.CategoryName }}</dd>
+                            <dt class="col-5">Condition</dt>
+                            <dd class="col-7">{{ detail.snapshot.Condition }}</dd>
+                            <dt class="col-5">Location</dt>
+                            <dd class="col-7">{{ detail.snapshot.CityName }}, {{ detail.snapshot.StateCode }}</dd>
+                            <dt class="col-5">Created</dt>
+                            <dd class="col-7">{{ detail.listing.created_at|date:"M j, Y" }}</dd>
+                            {% if detail.listing.updated_at %}
+                            <dt class="col-5">Updated</dt>
+                            <dd class="col-7">{{ detail.listing.updated_at|date:"M j, Y" }}</dd>
+                            {% endif %}
+                            {% if detail.show_view_count %}
+                            <dt class="col-5">Views</dt>
+                            <dd class="col-7">{{ detail.listing.view_count }}</dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0 listing-detail-card mb-4">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-3">Seller</h2>
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            {% if detail.seller_avatar_url %}
+                            <img class="listing-detail-seller-avatar" src="{{ detail.seller_avatar_url }}" alt="{{ detail.seller_display_name }} avatar">
+                            {% else %}
+                            <div class="listing-detail-seller-avatar listing-detail-seller-avatar-placeholder" aria-hidden="true">
+                                {{ detail.seller_display_name|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                            <div class="min-w-0">
+                                <div class="fw-semibold text-truncate">{{ detail.seller_display_name }}</div>
+                                {% if detail.seller_member_since %}
+                                <div class="small text-body-secondary">Member since {{ detail.seller_member_since|date:"F Y" }}</div>
+                                {% else %}
+                                <div class="small text-body-secondary">Marketplace member</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if detail.seller_bio %}
+                        <p class="small text-body-secondary mb-0">{{ detail.seller_bio|truncatechars:180 }}</p>
+                        {% else %}
+                        <p class="small text-body-secondary mb-0">The seller has not added a short profile note yet.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if user.is_authenticated and detail.is_owner %}
+                <div class="card shadow-sm border-0 listing-detail-card">
+                    <div class="card-body p-4">
+                        <h2 class="h5 mb-3">Owner actions</h2>
+                        <div class="d-grid gap-2">
+                            {% if detail.can_edit %}
+                            <a class="btn btn-primary" href="{% url 'edit_listing' detail.listing.listing_id %}">Edit Listing</a>
+                            {% else %}
+                            <button class="btn btn-primary" type="button" disabled>Edit Listing</button>
+                            {% endif %}
+                            <a class="btn btn-outline-secondary" href="{% url 'my_listings' %}">Back to My Listings</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
+
+<div class="modal fade" id="listing-gallery-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-fullscreen-md-down">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0 align-items-start gap-3">
+                <div>
+                    <h2 class="h5 mb-1">Listing image</h2>
+                    <div class="small listing-gallery-modal-counter" id="listing-gallery-modal-counter">Image 1 of 1</div>
+                    <div class="small listing-gallery-modal-hint">Desktop: click to zoom, drag to move, double-click to reset.</div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-auto">
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="listing-gallery-modal-reset-zoom">Reset zoom</button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="modal-body pt-3">
+                <div class="listing-gallery-modal-stage" id="listing-gallery-modal-stage">
+                    <button class="listing-gallery-control listing-gallery-control-prev" id="listing-gallery-modal-prev" type="button" aria-label="Previous image">
+                        <span aria-hidden="true">‹</span>
+                    </button>
+                    <img class="listing-gallery-modal-image" id="listing-gallery-modal-image" alt="">
+                    <button class="listing-gallery-control listing-gallery-control-next" id="listing-gallery-modal-next" type="button" aria-label="Next image">
+                        <span aria-hidden="true">›</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ gallery_images_payload|json_script:"listing-detail-gallery-images" }}
+<script src="{% static 'js/listing_detail.js' %}?v={% now 'U' %}"></script>
 {% endblock %}

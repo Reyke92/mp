@@ -30,7 +30,7 @@
             <div class="mb-3">
                 <label class="form-label" for="{{ filter_form.category.id_for_label }}">{{ filter_form.category.label }}</label>
                 {{ filter_form.category }}
-                <div class="form-text">Changing category rebuilds the category-specific attribute filters.</div>
+                <div class="form-text">Changing the category refreshes the extra filters available for that type of item.</div>
                 {% for error in filter_form.category.errors %}
                 <div class="text-danger small mt-1">{{ error }}</div>
                 {% endfor %}
@@ -119,9 +119,9 @@
                     </div>
                     {% endfor %}
                 {% elif filter_form.category.value %}
-                    <p class="text-body-secondary small mb-0">This category has no additional attribute filters.</p>
+                    <p class="text-body-secondary small mb-0">This category does not have additional filters right now.</p>
                 {% else %}
-                    <p class="text-body-secondary small mb-0">Choose a category to show its category-specific attribute filters.</p>
+                    <p class="text-body-secondary small mb-0">Choose a category to unlock extra filters for that type of item.</p>
                 {% endif %}
             </div>
 
