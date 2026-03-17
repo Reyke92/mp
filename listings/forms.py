@@ -45,7 +45,7 @@ class MultipleFileField(forms.FileField):
 
         files: list[Any] = list(data) if isinstance(data, (list, tuple)) else [data]
         cleaned_files: list[Any] = []
-        errors: list[ValidationError] = []
+        error_messages: list[str] = []
 
         for uploaded_file in files:
             try:
@@ -53,10 +53,11 @@ class MultipleFileField(forms.FileField):
                 validate_uploaded_image(cleaned_file)
                 cleaned_files.append(cleaned_file)
             except ValidationError as exc:
-                errors.extend(exc.error_list)
+                error_messages.extend(exc.messages)
 
-        if errors:
-            raise ValidationError(errors)
+        if error_messages:
+            validation_message: Any = error_messages
+            raise ValidationError(validation_message)
 
         return cleaned_files
 

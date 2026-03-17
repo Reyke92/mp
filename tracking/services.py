@@ -4,11 +4,8 @@ from typing import Any
 
 from django.db.models import F
 
-from admin_ops.models import UserRoleAssignment
+from admin_ops.utils.roles import is_user_administrator
 from listings.models import Listing
-
-
-ADMIN_ROLE_NAME: str = "Administrator"
 
 
 def record_view(listing_id: int, user_or_session: Any) -> int:
@@ -44,17 +41,7 @@ def _is_eligible_listing_view(*, listing: Listing, viewer: Any) -> bool:
         viewer_id: Any = getattr(viewer, "id", None)
         if viewer_id is not None and int(viewer_id) == int(listing.seller_user_id):
             return False
-        if _is_user_administrator(viewer):
+        if is_user_administrator(viewer):
             return False
 
     return True
-
-
-def _is_user_administrator(user: Any) -> bool:
-    if not getattr(user, "is_authenticated", False):
-        return False
-
-    return UserRoleAssignment.objects.filter(
-        user_id=getattr(user, "id", None),
-        role__role_name__iexact=ADMIN_ROLE_NAME,
-    ).exists()

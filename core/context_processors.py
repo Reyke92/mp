@@ -6,35 +6,152 @@ from typing import Any
 
 from django.core.cache import cache
 from django.http import HttpRequest
+from django.urls import NoReverseMatch, reverse
 
 from accounts.models import UserProfile
+from accounts.utils.auth import is_user_administrator, is_user_moderator
 from catalog.models import Category
 
 
 CATEGORY_SIDEBAR_CACHE_KEY: str = "core:categories_sidebar_tree:v1"
 CATEGORY_SIDEBAR_CACHE_TIMEOUT_SECONDS: int = 900
 
+_SIDEBAR_MAIN_ITEMS: tuple[dict[str, Any], ...] = (
+    {
+        "key": "home",
+        "label": "Home",
+        "route_names": ("home",),
+        "active_route_names": ("home",),
+    },
+    {
+        "key": "my_listings",
+        "label": "My Listings",
+        "route_names": ("my_listings",),
+        "active_route_names": ("my_listings", "edit_listing"),
+    },
+    {
+        "key": "create_listing",
+        "label": "Create Listing",
+        "route_names": ("create_listing",),
+        "active_route_names": ("create_listing",),
+    },
+    {
+        "key": "messages",
+        "label": "Messages",
+        "route_names": ("inbox", "messages"),
+        "active_route_names": ("inbox", "messages", "message_thread"),
+    },
+    {
+        "key": "profile",
+        "label": "Profile",
+        "route_names": ("profile",),
+        "active_route_names": ("profile", "view_profile"),
+    },
+)
+
+_SIDEBAR_MODERATION_ITEMS: tuple[dict[str, Any], ...] = (
+    {
+        "key": "moderation_queue",
+        "label": "Moderation Queue",
+        "route_names": ("moderation_queue", "mod_queue"),
+        "active_route_names": ("moderation_queue", "mod_queue", "report_details"),
+    },
+)
+
+_SIDEBAR_ADMIN_ITEMS: tuple[dict[str, Any], ...] = (
+    {
+        "key": "admin_dashboard",
+        "label": "Admin Dashboard",
+        "route_names": ("admin_dashboard",),
+        "active_route_names": ("admin_dashboard",),
+    },
+    {
+        "key": "user_management",
+        "label": "User Management",
+        "route_names": ("user_management",),
+        "active_route_names": ("user_management",),
+    },
+    {
+        "key": "listing_management",
+        "label": "Listing Management",
+        "route_names": ("listing_management",),
+        "active_route_names": ("listing_management",),
+    },
+    {
+        "key": "web_reports_hub",
+        "label": "Web Reports Hub",
+        "route_names": ("admin_reports_hub", "reports_hub"),
+        "active_route_names": ("admin_reports_hub", "reports_hub"),
+    },
+    {
+        "key": "moderation_log",
+        "label": "Moderation Log",
+        "route_names": ("moderation_log",),
+        "active_route_names": ("moderation_log",),
+    },
+)
+
+_ALL_SIDEBAR_ITEMS: tuple[dict[str, Any], ...] = (
+    _SIDEBAR_MAIN_ITEMS
+    + _SIDEBAR_MODERATION_ITEMS
+    + _SIDEBAR_ADMIN_ITEMS
+)
+
+_ACTIVE_SIDEBAR_KEY_BY_ROUTE_NAME: dict[str, str] = {
+    route_name: str(item_definition["key"])
+    for item_definition in _ALL_SIDEBAR_ITEMS
+    for route_name in item_definition["active_route_names"]
+}
+
 
 def user_profile_context(request: HttpRequest) -> dict[str, Any]:
     """
     Adds:
       - user: request.user
-      - profile: UserProfile (when authenticated)
+      - profile: UserProfile (when authenticated and present)
+      - is_admin: whether the authenticated user is an Administrator
+      - is_mod: whether the authenticated user is a Moderator
+      - active_sidebar_item: the current sidebar key for page highlighting
+      - sidebar_navigation_sections: dynamic sidebar navigation structure
       - categories_sidebar_tree: nested category tree for the global categories sidebar
       - active_category_id: currently selected category from the request query string
     """
     context: dict[str, Any] = {
         "user": request.user,
+        "is_admin": False,
+        "is_mod": False,
+        "active_sidebar_item": None,
+        "sidebar_navigation_sections": [],
     }
 
     if request.user.is_authenticated:
-        # Cache on the request object to avoid multiple DB hits in one request.
-        profile = getattr(request, "_cached_user_profile", None)
-        if profile is None:
-            profile = UserProfile.objects.get(user=request.user)
-            setattr(request, "_cached_user_profile", profile)
+        profile_loaded: bool = getattr(request, "_cached_user_profile_loaded", False)
+        profile: UserProfile | None = getattr(request, "_cached_user_profile", None)
 
-        context["profile"] = profile
+        if not profile_loaded:
+            profile = (
+                UserProfile.objects.select_related("city", "city__state")
+                .filter(user=request.user)
+                .first()
+            )
+            setattr(request, "_cached_user_profile", profile)
+            setattr(request, "_cached_user_profile_loaded", True)
+
+        if profile is not None:
+            context["profile"] = profile
+
+        is_admin: bool = is_user_administrator(request.user)
+        is_mod: bool = is_user_moderator(request.user)
+        active_sidebar_item: str | None = _get_active_sidebar_item(request)
+
+        context["is_admin"] = is_admin
+        context["is_mod"] = is_mod
+        context["active_sidebar_item"] = active_sidebar_item
+        context["sidebar_navigation_sections"] = _build_sidebar_navigation_sections(
+            active_sidebar_item=active_sidebar_item,
+            is_admin=is_admin,
+            is_mod=is_mod,
+        )
 
     active_category_id: int | None = _parse_active_category_id(request)
     category_tree_payload: dict[str, Any] = _get_category_sidebar_payload()
@@ -47,6 +164,105 @@ def user_profile_context(request: HttpRequest) -> dict[str, Any]:
     )
 
     return context
+
+
+def _get_active_sidebar_item(request: HttpRequest) -> str | None:
+    """
+    Resolve the current page to a sidebar item key using the matched route name.
+
+    This uses Django's resolver match, so query-string parameters are ignored.
+    """
+    resolver_match: Any = getattr(request, "resolver_match", None)
+    if resolver_match is None:
+        return None
+
+    route_name: str | None = getattr(resolver_match, "url_name", None)
+    if not route_name:
+        return None
+
+    return _ACTIVE_SIDEBAR_KEY_BY_ROUTE_NAME.get(str(route_name))
+
+
+def _build_sidebar_navigation_sections(
+    *,
+    active_sidebar_item: str | None,
+    is_admin: bool,
+    is_mod: bool,
+) -> list[dict[str, Any]]:
+    sections: list[dict[str, Any]] = [
+        {
+            "title": None,
+            "items": _build_sidebar_items(
+                item_definitions=_SIDEBAR_MAIN_ITEMS,
+                active_sidebar_item=active_sidebar_item,
+            ),
+        }
+    ]
+
+    if is_mod or is_admin:
+        sections.append(
+            {
+                "title": "Moderation",
+                "items": _build_sidebar_items(
+                    item_definitions=_SIDEBAR_MODERATION_ITEMS,
+                    active_sidebar_item=active_sidebar_item,
+                ),
+            }
+        )
+
+    if is_admin:
+        sections.append(
+            {
+                "title": "Administration",
+                "items": _build_sidebar_items(
+                    item_definitions=_SIDEBAR_ADMIN_ITEMS,
+                    active_sidebar_item=active_sidebar_item,
+                ),
+            }
+        )
+
+    return sections
+
+
+def _build_sidebar_items(
+    *,
+    item_definitions: tuple[dict[str, Any], ...],
+    active_sidebar_item: str | None,
+) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+
+    for item_definition in item_definitions:
+        item_url, route_available = _resolve_sidebar_url(
+            route_names=tuple(item_definition["route_names"])
+        )
+
+        items.append(
+            {
+                "key": str(item_definition["key"]),
+                "label": str(item_definition["label"]),
+                "url": item_url,
+                "is_active": active_sidebar_item == str(item_definition["key"]),
+                "is_disabled": not route_available,
+            }
+        )
+
+    return items
+
+
+def _resolve_sidebar_url(*, route_names: tuple[str, ...]) -> tuple[str, bool]:
+    """
+    Resolve the first available named route for a sidebar item.
+
+    If the route does not exist yet, return a safe placeholder URL and mark the
+    item as disabled so future routes can be added without changing the template.
+    """
+    for route_name in route_names:
+        try:
+            return reverse(route_name), True
+        except NoReverseMatch:
+            continue
+
+    return "#", False
 
 
 def _parse_active_category_id(request: HttpRequest) -> int | None:

@@ -7,13 +7,28 @@
             <aside class="card shadow-sm border-0 h-100">
                 <div class="card-body p-3">
                     <h2 class="h5 mb-3">Navigation</h2>
-                    <div class="nav nav-pills flex-column gap-2 sidebar-nav-card">
-                        <a class="nav-link {% if active_sidebar_item == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
-                        <a class="nav-link {% if active_sidebar_item == 'my_listings' %}active{% endif %}" href="{% url 'my_listings' %}">My Listings</a>
-                        <a class="nav-link {% if active_sidebar_item == 'create_listing' %}active{% endif %}" href="{% url 'create_listing' %}">Create Listing</a>
-                        <a class="nav-link disabled" href="#" aria-disabled="true">Messages</a>
-                        <a class="nav-link {% if active_sidebar_item == 'profile' %}active{% endif %}" href="{% url 'profile' %}">Profile</a>
-                    </div>
+
+                    <nav class="nav nav-pills flex-column gap-2 sidebar-nav-card" aria-label="Sidebar navigation">
+                        {% for section in sidebar_navigation_sections %}
+                            {% if not forloop.first %}
+                            <hr class="my-2">
+                            {% endif %}
+
+                            {% if section.title %}
+                            <h3 class="h6 mb-1 text-uppercase text-muted">{{ section.title }}</h3>
+                            {% endif %}
+
+                            {% for item in section.items %}
+                            <a
+                                class="nav-link{% if item.is_active %} active{% endif %}{% if item.is_disabled %} disabled{% endif %}"
+                                href="{{ item.url }}"
+                                {% if item.is_disabled %}aria-disabled="true" tabindex="-1"{% endif %}
+                            >
+                                {{ item.label }}
+                            </a>
+                            {% endfor %}
+                        {% endfor %}
+                    </nav>
                 </div>
             </aside>
         </div>
