@@ -18,17 +18,17 @@ class Migration(migrations.Migration):
                 migrations.RunSQL(
                     sql="""
 CREATE TABLE `administration_action_type` (
-  `action_type_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `action_type_id` bigint NOT NULL AUTO_INCREMENT,
   `action_type_name` varchar(30) NOT NULL,
   PRIMARY KEY (`action_type_id`),
   UNIQUE KEY `uq_administration_action_type_name` (`action_type_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `administration_actions` (
-  `action_id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `action_id` bigint NOT NULL AUTO_INCREMENT,
   `actor_user_id` int NOT NULL,
-  `action_type_id` bigint unsigned NOT NULL,
-  `listing_id` bigint unsigned DEFAULT NULL,
+  `action_type_id` bigint NOT NULL,
+  `listing_id` bigint DEFAULT NULL,
   `target_user_id` int DEFAULT NULL,
   `notes` text,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
