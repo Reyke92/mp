@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
             options={
                 'db_table': 'cities',
                 'managed': True,
-                'indexes': [models.Index(fields=['state'], name='ix_cities_state'), models.Index(fields=['timezone'], name='fk_cities_timezone'), models.Index(fields=['location'], name='spx_cities_location')],
+                'indexes': [models.Index(fields=['state'], name='ix_cities_state'), models.Index(fields=['timezone'], name='fk_cities_timezone')],
                 'constraints': [models.UniqueConstraint(fields=('state', 'city_name'), name='uq_cities_state_city'), models.CheckConstraint(condition=models.Q(('latitude__gte', -90), ('latitude__lte', 90)), name='chk_cities_lat'), models.CheckConstraint(condition=models.Q(('longitude__gte', -180), ('longitude__lte', 180)), name='chk_cities_lon')],
             },
         ),
