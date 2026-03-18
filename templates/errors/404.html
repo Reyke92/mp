@@ -1,0 +1,64 @@
+{% extends 'sidebar_content_view.html' %}
+{% load static %}
+
+{% block page_content %}
+<section class="error-shell" aria-labelledby="error-page-title" aria-describedby="error-page-subtitle">
+    <div class="mb-4">
+        <span class="marketplace-chip error-status-pill">404</span>
+        <h1 id="error-page-title" class="display-6 fw-semibold mt-3 mb-2">Page Not Found</h1>
+        <p id="error-page-subtitle" class="text-secondary fs-5 mb-0">The requested page was not found or is not available.</p>
+    </div>
+
+    <div class="card border-0 error-card overflow-hidden">
+        <div class="card-body p-0">
+            <div class="row g-0 align-items-stretch">
+                <div class="col-12 col-xl-5">
+                    <div class="error-illustration-panel error-illustration-404 h-100">
+                        <div class="ratio error-illustration-frame" style="--bs-aspect-ratio: 74%;">
+                            <div class="error-illustration-stage">
+                                <svg class="error-illustration-svg" viewBox="0 0 640 460" role="img" aria-label="Marketplace shelf search illustration showing an empty listing space">
+                                    <defs>
+                                        <linearGradient id="lensGradient404" x1="0%" x2="100%" y1="0%" y2="100%">
+                                            <stop offset="0%" stop-color="#7fb2ff"></stop>
+                                            <stop offset="100%" stop-color="#2f6fed"></stop>
+                                        </linearGradient>
+                                    </defs>
+                                    <rect x="68" y="84" width="504" height="292" rx="30" fill="#ffffff" opacity="0.9"></rect>
+                                    <rect x="112" y="126" width="416" height="24" rx="12" fill="#e8f0ff"></rect>
+                                    <rect x="118" y="190" width="404" height="18" rx="9" fill="#d8e3f0"></rect>
+                                    <rect x="118" y="286" width="404" height="18" rx="9" fill="#d8e3f0"></rect>
+                                    <rect x="132" y="214" width="84" height="52" rx="18" fill="#f7fafc" stroke="#d8e3f0" stroke-width="8"></rect>
+                                    <rect x="240" y="214" width="84" height="52" rx="18" fill="#f7fafc" stroke="#d8e3f0" stroke-width="8"></rect>
+                                    <rect x="348" y="214" width="84" height="52" rx="18" fill="#f7fafc" stroke="#d8e3f0" stroke-width="8"></rect>
+                                    <circle cx="436" cy="238" r="68" fill="none" stroke="url(#lensGradient404)" stroke-width="18"></circle>
+                                    <path d="M482 284l62 62" fill="none" stroke="#2f6fed" stroke-linecap="round" stroke-width="20"></path>
+                                    <path d="M404 238h64" fill="none" stroke="#bfd2ff" stroke-dasharray="12 12" stroke-linecap="round" stroke-width="10"></path>
+                                    <path d="M436 206v64" fill="none" stroke="#bfd2ff" stroke-dasharray="12 12" stroke-linecap="round" stroke-width="10"></path>
+                                    <path d="M372 146l26-26 20 20 38-38" fill="none" stroke="#9dbcf8" stroke-linecap="round" stroke-linejoin="round" stroke-width="12"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-7">
+                    <div class="p-4 p-lg-5 text-start">
+                        <p class="text-uppercase text-secondary fw-semibold small mb-2">404 Not Found</p>
+                        <h2 class="h3 mb-3">Whoops, that listing aisle is empty.</h2>
+                        <p class="mb-3">The page may have moved, the link may be outdated, or the address may have a small typo. The good news is that the rest of the marketplace is still right where it should be.</p>
+                        <ul class="list-unstyled error-help-list mb-0">
+                            <li>Double-check the web address if you typed it manually.</li>
+                            <li>Head back to the homepage and browse from the main navigation.</li>
+                            <li>Use search or category links to jump back into active listings.</li>
+                        </ul>
+                        <div class="d-grid d-sm-inline-flex gap-2 mt-4">
+                            <a class="btn btn-primary btn-lg px-4" href="{% url 'home' %}">Go Home</a>
+                        </div>
+                        <p class="text-secondary small mt-3 mb-0">This page intentionally keeps the message simple so you can recover quickly.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="{% static 'js/error_actions.js' %}"></script>
+{% endblock %}

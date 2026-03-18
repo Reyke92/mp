@@ -1,0 +1,71 @@
+{% extends 'sidebar_content_view.html' %}
+{% load static %}
+
+{% block page_content %}
+<section class="error-shell" aria-labelledby="error-page-title" aria-describedby="error-page-subtitle">
+    <div class="mb-4">
+        <span class="marketplace-chip error-status-pill">403</span>
+        <h1 id="error-page-title" class="display-6 fw-semibold mt-3 mb-2">Access Denied</h1>
+        <p id="error-page-subtitle" class="text-secondary fs-5 mb-0">You do not have permission to open this page right now.</p>
+    </div>
+
+    <div class="card border-0 error-card overflow-hidden">
+        <div class="card-body p-0">
+            <div class="row g-0 align-items-stretch">
+                <div class="col-12 col-xl-5">
+                    <div class="error-illustration-panel error-illustration-403 h-100">
+                        <div class="ratio error-illustration-frame" style="--bs-aspect-ratio: 74%;">
+                            <div class="error-illustration-stage">
+                                <svg class="error-illustration-svg" viewBox="0 0 640 460" role="img" aria-label="Marketplace storefront with a protected access shield illustration">
+                                    <defs>
+                                        <linearGradient id="shieldGradient403" x1="0%" x2="100%" y1="0%" y2="100%">
+                                            <stop offset="0%" stop-color="#ffd86a"></stop>
+                                            <stop offset="100%" stop-color="#f59e0b"></stop>
+                                        </linearGradient>
+                                    </defs>
+                                    <rect x="72" y="72" width="496" height="316" rx="30" fill="#ffffff" opacity="0.88"></rect>
+                                    <rect x="112" y="128" width="416" height="36" rx="18" fill="#e8f0ff"></rect>
+                                    <rect x="112" y="182" width="248" height="162" rx="22" fill="#f7fafc" stroke="#d8e3f0" stroke-width="8"></rect>
+                                    <rect x="386" y="182" width="102" height="70" rx="18" fill="#f7fafc" stroke="#d8e3f0" stroke-width="8"></rect>
+                                    <rect x="386" y="274" width="102" height="70" rx="18" fill="#f7fafc" stroke="#d8e3f0" stroke-width="8"></rect>
+                                    <path d="M180 128c0-33 27-60 60-60s60 27 60 60" fill="none" stroke="#2f6fed" stroke-linecap="round" stroke-width="12"></path>
+                                    <path d="M321 140h159" fill="none" stroke="#bfd2ff" stroke-linecap="round" stroke-width="14"></path>
+                                    <path d="M454 108l34 32-34 32" fill="none" stroke="#bfd2ff" stroke-linecap="round" stroke-linejoin="round" stroke-width="14"></path>
+                                    <path d="M320 186l76-31 76 31v68c0 59-33 107-76 129-43-22-76-70-76-129z" fill="url(#shieldGradient403)"></path>
+                                    <path d="M362 254l23 23 48-55" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="18"></path>
+                                    <circle cx="216" cy="258" r="18" fill="#bfd2ff"></circle>
+                                    <rect x="192" y="284" width="48" height="34" rx="17" fill="#bfd2ff"></rect>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-xl-7">
+                    <div class="p-4 p-lg-5 text-start">
+                        <p class="text-uppercase text-secondary fw-semibold small mb-2">403 Forbidden</p>
+                        <h2 class="h3 mb-3">Looks like this space is reserved.</h2>
+                        <p class="mb-3">This page is protected, so your current account cannot open it. Nothing is broken; the page is simply behind a permission check.</p>
+                        <ul class="list-unstyled error-help-list mb-0">
+                            <li>Make sure you are signed in to the account you meant to use.</li>
+                            <li>Check whether this page requires moderator or administrator access.</li>
+                            <li>If you believe you should have access, contact a site administrator for help.</li>
+                        </ul>
+                        <div class="d-grid d-sm-inline-flex gap-2 mt-4">
+                            <button
+                                class="btn btn-primary btn-lg px-4"
+                                type="button"
+                                data-error-action="go-back"
+                                data-home-url="{% url 'home' %}"
+                            >
+                                Take Me Back
+                            </button>
+                        </div>
+                        <p class="text-secondary small mt-3 mb-0">Tip: if there is no safe page to return to, the button will send you home instead.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="{% static 'js/error_actions.js' %}"></script>
+{% endblock %}

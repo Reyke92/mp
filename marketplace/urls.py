@@ -15,8 +15,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
-from django.conf.urls.static import static
-from django.urls import path, include
+from django.urls import include, path, re_path
+from django.views.static import serve
+
+handler403 = "marketplace.error_views.error_403"
+handler404 = "marketplace.error_views.error_404"
+handler500 = "marketplace.error_views.error_500"
 
 urlpatterns = [
     path("", include("core.urls")),
@@ -25,5 +29,16 @@ urlpatterns = [
     path("", include("listings.urls")),
 ]
 
-urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG or getattr(settings, "SERVE_FILES_THROUGH_DJANGO", False):
+    urlpatterns += [
+        re_path(
+            r"^static/(?P<path>.*)$",
+            serve,
+            {"document_root": settings.STATIC_ROOT},
+        ),
+        re_path(
+            r"^(?P<path>.*)$",
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]
