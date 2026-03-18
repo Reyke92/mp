@@ -3,7 +3,7 @@ name: Django CI
 on: [push, pull_request]
 
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
 
     services:
@@ -19,44 +19,116 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-    
+
     env:
-      DB_NAME: my_db
+      DB_NAME: mp_db
       DB_USER: root
       DB_PASSWORD: rootpasswd
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
 
     steps:
-    - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Cache pip
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pip
+          key: ${{runner.os}}-pip-${{hashFiles('requirements.txt')}}
+          restore-keys: ${{runner.os}}-pip-
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Unit Tests
+        run: python manage.py test tests.unit --verbosity=2
 
-    - name: Set up Python 3.14
-      uses: actions/setup-python@v6
-      with:
-        python-version: '3.14'
+  integration-tests:
+    runs-on: ubuntu-latest
 
-    - name: Cache pip
-      uses: actions/cache@v5
-      with:
-        path: ~/.cache/pip
-        key: ${{runner.os}}-pip-${{hashFiles('requirements.txt')}}
-        restore-keys: ${{runner.os}}-pip-
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: rootpasswd
+          MYSQL_DATABASE: mp_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+    env:
+      DB_NAME: mp_db
+      DB_USER: root
+      DB_PASSWORD: rootpasswd
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
 
-    - name: Install Chrome & ChromeDriver
-      run: |
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Cache pip
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pip
+          key: ${{runner.os}}-pip-${{hashFiles('requirements.txt')}}
+          restore-keys: ${{runner.os}}-pip-
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Integration Tests
+        run: python manage.py test tests.integration --verbosity=2
+
+  system-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: rootpasswd
+          MYSQL_DATABASE: mp_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DB_NAME: mp_db
+      DB_USER: root
+      DB_PASSWORD: rootpasswd
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Cache pip
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pip
+          key: ${{runner.os}}-pip-${{hashFiles('requirements.txt')}}
+          restore-keys: ${{runner.os}}-pip-
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Install Chrome & ChromeDriver
+        run: |
           sudo apt-get update
           sudo apt-get install -y chromium-browser chromium-chromedriver
-
-    - name: Run Unit Tests
-      run: python manage.py test tests.unit --verbosity=2
-
-    - name: Run Integration Tests
-      run: python manage.py test tests.integration --verbosity=2
-
-    - name: Run System Tests
-      run: python manage.py test tests.system --verbosity=2
+      - name: Run System Tests
+        run: python manage.py test tests.system --verbosity=2
