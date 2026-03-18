@@ -3,24 +3,60 @@ name: Django CI
 on: [push, pull_request]
 
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 3
-      matrix:
-        python-version: [3.14]
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: rootpasswd
+          MYSQL_DATABASE: mp_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    
+    env:
+      DB_NAME: my_db
+      DB_USER: root
+      DB_PASSWORD: rootpasswd
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+    - uses: actions/checkout@v6
+
+    - name: Set up Python 3.14
+      uses: actions/setup-python@v6
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.14'
+
+    - name: Cache pip
+      uses: actions/cache@v5
+      with:
+        path: ~/.cache/pip
+        key: ${{runner.os}}-pip-${{hashFiles('requirements.txt')}}
+        restore-keys: ${{runner.os}}-pip-
+
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Run Tests
+
+    - name: Install Chrome & ChromeDriver
       run: |
-        python manage.py test
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+
+    - name: Run Unit Tests
+      run: python manage.py test tests.unit --verbosity=2
+
+    - name: Run Integration Tests
+      run: python manage.py test tests.integration --verbosity=2
+
+    - name: Run System Tests
+      run: python manage.py test tests.system --verbosity=2
