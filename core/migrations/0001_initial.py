@@ -35,22 +35,62 @@ class Migration(migrations.Migration):
                 'managed': True,
             },
         ),
-        migrations.CreateModel(
-            name='City',
-            fields=[
-                ('city_id', models.BigAutoField(db_column='city_id', primary_key=True, serialize=False)),
-                ('city_name', models.CharField(db_column='city_name', max_length=50)),
-                ('latitude', models.DecimalField(db_column='latitude', decimal_places=6, max_digits=9)),
-                ('longitude', models.DecimalField(db_column='longitude', decimal_places=6, max_digits=9)),
-                ('location', models.BinaryField(db_column='location')),
-                ('state', models.ForeignKey(db_column='state_id', on_delete=django.db.models.deletion.RESTRICT, to='core.state')),
-                ('timezone', models.ForeignKey(db_column='timezone_id', on_delete=django.db.models.deletion.RESTRICT, to='core.timezone')),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+CREATE TABLE `cities` (
+  `city_id` bigint NOT NULL AUTO_INCREMENT,
+  `city_name` varchar(50) NOT NULL,
+  `latitude` decimal(9,6) NOT NULL,
+  `longitude` decimal(9,6) NOT NULL,
+  `location` longblob NOT NULL,
+  `state_id` bigint NOT NULL,
+  `timezone_id` bigint NOT NULL,
+  PRIMARY KEY (`city_id`),
+  UNIQUE KEY `uq_cities_state_city` (`state_id`, `city_name`),
+  KEY `ix_cities_state` (`state_id`),
+  KEY `fk_cities_timezone` (`timezone_id`),
+  CONSTRAINT `fk_cities_state`
+    FOREIGN KEY (`state_id`) REFERENCES `states` (`state_id`)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_cities_timezone`
+    FOREIGN KEY (`timezone_id`) REFERENCES `timezones` (`timezone_id`)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `chk_cities_lat` CHECK (`latitude` BETWEEN -90 AND 90),
+  CONSTRAINT `chk_cities_lon` CHECK (`longitude` BETWEEN -180 AND 180)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+""",
+                    reverse_sql="DROP TABLE IF EXISTS `cities`;",
+                ),
             ],
-            options={
-                'db_table': 'cities',
-                'managed': True,
-                'indexes': [models.Index(fields=['state'], name='ix_cities_state'), models.Index(fields=['timezone'], name='fk_cities_timezone')],
-                'constraints': [models.UniqueConstraint(fields=('state', 'city_name'), name='uq_cities_state_city'), models.CheckConstraint(condition=models.Q(('latitude__gte', -90), ('latitude__lte', 90)), name='chk_cities_lat'), models.CheckConstraint(condition=models.Q(('longitude__gte', -180), ('longitude__lte', 180)), name='chk_cities_lon')],
-            },
+            state_operations=[
+                migrations.CreateModel(
+                    name='City',
+                    fields=[
+                        ('city_id', models.BigAutoField(db_column='city_id', primary_key=True, serialize=False)),
+                        ('city_name', models.CharField(db_column='city_name', max_length=50)),
+                        ('latitude', models.DecimalField(db_column='latitude', decimal_places=6, max_digits=9)),
+                        ('longitude', models.DecimalField(db_column='longitude', decimal_places=6, max_digits=9)),
+                        ('location', models.BinaryField(db_column='location')),
+                        ('state', models.ForeignKey(db_column='state_id', on_delete=django.db.models.deletion.RESTRICT, to='core.state')),
+                        ('timezone', models.ForeignKey(db_column='timezone_id', on_delete=django.db.models.deletion.RESTRICT, to='core.timezone')),
+                    ],
+                    options={
+                        'db_table': 'cities',
+                        'managed': True,
+                        'indexes': [
+                            models.Index(fields=['state'], name='ix_cities_state'),
+                            models.Index(fields=['timezone'], name='fk_cities_timezone'),
+                            models.Index(fields=['location'], name='spx_cities_location'),
+                        ],
+                        'constraints': [
+                            models.UniqueConstraint(fields=('state', 'city_name'), name='uq_cities_state_city'),
+                            models.CheckConstraint(condition=models.Q(('latitude__gte', -90), ('latitude__lte', 90)), name='chk_cities_lat'),
+                            models.CheckConstraint(condition=models.Q(('longitude__gte', -180), ('longitude__lte', 180)), name='chk_cities_lon'),
+                        ],
+                    },
+                ),
+            ],
         ),
     ]
