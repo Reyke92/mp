@@ -31,7 +31,6 @@ class ListingViewCountTrackingTests(TestCase):
             timezone=self.timezone,
             latitude="36.968521",
             longitude="-86.480804",
-            location=b"",
         )
         self.category = Category.objects.create(name="Electronics", slug="electronics")
         self.condition = ItemCondition.objects.create(condition_name="Used")
