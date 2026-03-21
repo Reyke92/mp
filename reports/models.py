@@ -7,10 +7,11 @@ These models are mapped 1:1 to existing database tables and are managed by Djang
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
+from common.fields import UnsignedBigAutoField
 
 
 class Report(models.Model):
-    report_id = models.BigAutoField(primary_key=True, db_column='report_id')
+    report_id = UnsignedBigAutoField(primary_key=True, db_column='report_id')
     reporter_user = models.ForeignKey(settings.AUTH_USER_MODEL, models.RESTRICT, db_column='reporter_user_id')
     conversation = models.ForeignKey('messaging.Conversation', models.RESTRICT, null=True, blank=True, db_column='conversation_id')
     listing = models.ForeignKey('listings.Listing', models.RESTRICT, null=True, blank=True, db_column='listing_id')
@@ -32,7 +33,7 @@ class Report(models.Model):
 
 
 class ReportStatus(models.Model):
-    status_id = models.BigAutoField(primary_key=True, db_column='status_id')
+    status_id = UnsignedBigAutoField(primary_key=True, db_column='status_id')
     status_name = models.CharField(max_length=30, unique=True, db_column='status_name')
 
     class Meta:

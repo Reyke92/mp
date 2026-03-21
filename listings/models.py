@@ -8,10 +8,11 @@ from django.conf import settings
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.db import models
+from common.fields import UnsignedBigAutoField
 
 
 class Listing(models.Model):
-    listing_id = models.BigAutoField(primary_key=True, db_column='listing_id')
+    listing_id = UnsignedBigAutoField(primary_key=True, db_column='listing_id')
     seller_user = models.ForeignKey(settings.AUTH_USER_MODEL, models.RESTRICT, db_column='seller_user_id')
     category = models.ForeignKey('catalog.Category', models.RESTRICT, db_column='category_id')
     condition = models.ForeignKey('catalog.ItemCondition', models.RESTRICT, db_column='condition_id')
@@ -37,7 +38,7 @@ class Listing(models.Model):
 
 
 class ListingImage(models.Model):
-    image_id = models.BigAutoField(primary_key=True, db_column='image_id')
+    image_id = UnsignedBigAutoField(primary_key=True, db_column='image_id')
     listing = models.ForeignKey('listings.Listing', models.CASCADE, db_column='listing_id')
     image_url = models.CharField(max_length=512, db_column='image_url')
     display_order = models.IntegerField(db_column='display_order')
@@ -55,7 +56,7 @@ class ListingImage(models.Model):
 
 
 class ListingAttributeValue(models.Model):
-    id = models.BigAutoField(primary_key=True, db_column='id')
+    id = UnsignedBigAutoField(primary_key=True, db_column='id')
     listing = models.ForeignKey('listings.Listing', models.CASCADE, db_column='listing_id')
     attribute = models.ForeignKey('catalog.Attribute', models.RESTRICT, db_column='attribute_id')
     value_int = models.BigIntegerField(null=True, blank=True, default=None, db_column='value_int')
@@ -77,7 +78,7 @@ class ListingAttributeValue(models.Model):
 
 
 class ListingStatus(models.Model):
-    status_id = models.BigAutoField(primary_key=True, db_column='status_id')
+    status_id = UnsignedBigAutoField(primary_key=True, db_column='status_id')
     status_name = models.CharField(max_length=30, unique=True, db_column='status_name')
 
     class Meta:

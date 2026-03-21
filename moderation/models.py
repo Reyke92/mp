@@ -7,10 +7,11 @@ These models are mapped 1:1 to existing database tables and are managed by Djang
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
+from common.fields import UnsignedBigAutoField
 
 
 class ModerationActionType(models.Model):
-    action_type_id = models.BigAutoField(primary_key=True, db_column='action_type_id')
+    action_type_id = UnsignedBigAutoField(primary_key=True, db_column='action_type_id')
     action_type_name = models.CharField(max_length=30, unique=True, db_column='action_type_name')
 
     class Meta:
@@ -19,7 +20,7 @@ class ModerationActionType(models.Model):
 
 
 class ModerationAction(models.Model):
-    action_id = models.BigAutoField(primary_key=True, db_column='action_id')
+    action_id = UnsignedBigAutoField(primary_key=True, db_column='action_id')
     actor_user = models.ForeignKey(settings.AUTH_USER_MODEL, models.RESTRICT, db_column='actor_user_id', related_name='moderation_actions_as_actor')
     action_type = models.ForeignKey('moderation.ModerationActionType', models.RESTRICT, db_column='action_type_id')
     listing = models.ForeignKey('listings.Listing', models.RESTRICT, null=True, blank=True, db_column='listing_id')

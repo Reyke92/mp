@@ -1,10 +1,11 @@
 from django.conf import settings
 from django.db import models
+from common.fields import UnsignedBigAutoField
 from core.storage import avatar_upload_to
 
 
 class UserProfile(models.Model):
-    id = models.BigAutoField(primary_key=True, db_column='id')
+    id = UnsignedBigAutoField(primary_key=True, db_column='id')
     user = models.OneToOneField(settings.AUTH_USER_MODEL, models.CASCADE, db_column='user_id')
     bio = models.TextField(null=True, blank=True, db_column='bio')
     avatar = models.ImageField(

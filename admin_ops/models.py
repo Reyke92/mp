@@ -8,10 +8,11 @@ This version preserves the existing role-assignment tables and adds:
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
+from common.fields import UnsignedBigAutoField
 
 
 class Role(models.Model):
-    role_id = models.BigAutoField(primary_key=True, db_column='role_id')
+    role_id = UnsignedBigAutoField(primary_key=True, db_column='role_id')
     role_name = models.CharField(max_length=50, unique=True, db_column='role_name')
 
     class Meta:
@@ -20,7 +21,7 @@ class Role(models.Model):
 
 
 class UserRoleAssignment(models.Model):
-    id = models.BigAutoField(primary_key=True, db_column='id')
+    id = UnsignedBigAutoField(primary_key=True, db_column='id')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE, db_column='user_id')
     role = models.ForeignKey('admin_ops.Role', models.CASCADE, db_column='role_id')
     assigned_at = models.DateTimeField(default=timezone.now, db_column='assigned_at')
@@ -37,7 +38,7 @@ class UserRoleAssignment(models.Model):
 
 
 class AdministrationActionType(models.Model):
-    action_type_id = models.BigAutoField(primary_key=True, db_column='action_type_id')
+    action_type_id = UnsignedBigAutoField(primary_key=True, db_column='action_type_id')
     action_type_name = models.CharField(max_length=30, unique=True, db_column='action_type_name')
 
     class Meta:
@@ -46,7 +47,7 @@ class AdministrationActionType(models.Model):
 
 
 class AdministrationAction(models.Model):
-    action_id = models.BigAutoField(primary_key=True, db_column='action_id')
+    action_id = UnsignedBigAutoField(primary_key=True, db_column='action_id')
     actor_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         models.RESTRICT,

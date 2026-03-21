@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from decimal import Decimal
+from math import cos, radians
 from typing import Any
 
 from django.core.paginator import Paginator
@@ -23,6 +24,7 @@ from django.http import HttpRequest, QueryDict
 
 from accounts.models import UserProfile
 from catalog.models import Category
+from core.models import City
 from listings.models import Listing, ListingAttributeValue
 from tracking.json_snapshots import ListingMetadataSnapshotData, get_snapshot
 
@@ -31,7 +33,13 @@ from .forms import DynamicAttributeFieldGroup, ListingSearchForm
 
 RESULTS_PER_PAGE: int = 12
 EARTH_RADIUS_MILES: float = 3959.0
+MILES_PER_LATITUDE_DEGREE: float = 69.0
+MILES_PER_LONGITUDE_DEGREE_AT_EQUATOR: float = 69.172
+MINIMUM_LONGITUDE_SCALE: float = 0.000001
 NON_PUBLIC_STATUS_NAMES: tuple[str, ...] = ("Frozen", "Deleted")
+DISTANCE_UNAVAILABLE_MESSAGE: str = (
+    "Distance filtering and closest-to-me sorting require a signed-in user profile with a city."
+)
 
 
 @dataclass(slots=True)
@@ -51,6 +59,12 @@ class SearchResultCard:
     condition_name: str
     category_name: str
     image_url: str | None
+
+
+@dataclass(slots=True)
+class UserDistanceContext:
+    latitude: float
+    longitude: float
 
 
 def build_listing_browser_context(
@@ -73,17 +87,9 @@ def build_listing_browser_context(
         default_sort=default_sort,
     )
 
-    listings_queryset: QuerySet[Listing] = (
-        Listing.objects.select_related(
-            "status",
-            "city",
-            "city__state",
-        )
-        .exclude(
-            Q(status__status_name__iexact=NON_PUBLIC_STATUS_NAMES[0])
-            | Q(status__status_name__iexact=NON_PUBLIC_STATUS_NAMES[1])
-        )
-        .order_by("-created_at", "-listing_id")
+    listings_queryset: QuerySet[Listing] = Listing.objects.exclude(
+        Q(status__status_name__iexact=NON_PUBLIC_STATUS_NAMES[0])
+        | Q(status__status_name__iexact=NON_PUBLIC_STATUS_NAMES[1])
     )
 
     distance_is_available: bool = False
@@ -91,6 +97,10 @@ def build_listing_browser_context(
 
     if filter_form.is_valid():
         search_text: str = str(filter_form.cleaned_data.get("q") or "").strip()
+        sort_value: str = str(filter_form.cleaned_data.get("sort") or default_sort)
+        distance_miles: int | None = filter_form.cleaned_data.get("distance_miles")
+        needs_distance_features: bool = distance_miles is not None or sort_value == "closest"
+
         listings_queryset = _apply_keyword_filter(
             queryset=listings_queryset,
             query_text=search_text,
@@ -115,23 +125,35 @@ def build_listing_browser_context(
         if maximum_price is not None:
             listings_queryset = listings_queryset.filter(price_amount__lte=maximum_price)
 
-        listings_queryset, distance_is_available = _annotate_distance_miles(
-            queryset=listings_queryset,
-            request=request,
-        )
+        user_distance_context: UserDistanceContext | None = None
+        if needs_distance_features:
+            user_distance_context = _get_user_distance_context(request)
+            distance_is_available = user_distance_context is not None
 
-        distance_miles: int | None = filter_form.cleaned_data.get("distance_miles")
-        if distance_miles is not None and distance_is_available:
-            listings_queryset = listings_queryset.filter(distance_miles__lte=distance_miles)
-        elif distance_miles is not None and not distance_is_available:
-            distance_message = "Distance filtering and closest-to-me sorting require a signed-in user profile with a city."
+        if distance_miles is not None and user_distance_context is not None:
+            listings_queryset = _apply_distance_radius_prefilter(
+                queryset=listings_queryset,
+                user_distance_context=user_distance_context,
+                radius_miles=distance_miles,
+            )
+        elif distance_miles is not None:
+            distance_message = DISTANCE_UNAVAILABLE_MESSAGE
 
         listings_queryset = _apply_dynamic_attribute_filters(
             queryset=listings_queryset,
             filter_form=filter_form,
         )
 
-        sort_value: str = str(filter_form.cleaned_data.get("sort") or default_sort)
+        if needs_distance_features and user_distance_context is not None:
+            listings_queryset = _annotate_distance_miles(
+                queryset=listings_queryset,
+                user_distance_context=user_distance_context,
+            )
+            if distance_miles is not None:
+                listings_queryset = listings_queryset.filter(distance_miles__lte=distance_miles)
+        elif needs_distance_features:
+            distance_message = DISTANCE_UNAVAILABLE_MESSAGE
+
         listings_queryset = _apply_sorting(
             queryset=listings_queryset,
             sort_value=sort_value,
@@ -139,9 +161,11 @@ def build_listing_browser_context(
             distance_is_available=distance_is_available,
         )
     else:
-        listings_queryset, distance_is_available = _annotate_distance_miles(
+        listings_queryset = _apply_sorting(
             queryset=listings_queryset,
-            request=request,
+            sort_value=default_sort,
+            search_text="",
+            distance_is_available=False,
         )
 
     listings_queryset = listings_queryset.distinct()
@@ -167,6 +191,7 @@ def build_listing_browser_context(
     }
 
 
+
 def _build_effective_query_data(query_dict: QueryDict, default_sort: str) -> QueryDict | None:
     if query_dict:
         effective_query_dict: QueryDict = query_dict.copy()
@@ -174,6 +199,7 @@ def _build_effective_query_data(query_dict: QueryDict, default_sort: str) -> Que
             effective_query_dict["sort"] = default_sort
         return effective_query_dict
     return None
+
 
 
 def _build_result_cards(listings: Any) -> list[SearchResultCard]:
@@ -195,6 +221,7 @@ def _build_result_cards(listings: Any) -> list[SearchResultCard]:
         )
 
     return result_cards
+
 
 
 def _apply_keyword_filter(queryset: QuerySet[Listing], query_text: str) -> QuerySet[Listing]:
@@ -220,9 +247,11 @@ def _apply_keyword_filter(queryset: QuerySet[Listing], query_text: str) -> Query
     )
 
 
+
 def _apply_category_filter(queryset: QuerySet[Listing], category_id: int) -> QuerySet[Listing]:
     category_ids: list[int] = _get_category_and_descendant_ids(category_id)
     return queryset.filter(category_id__in=category_ids)
+
 
 
 def _get_category_and_descendant_ids(category_id: int) -> list[int]:
@@ -252,29 +281,103 @@ def _get_category_and_descendant_ids(category_id: int) -> list[int]:
     return sorted(discovered_ids)
 
 
-def _annotate_distance_miles(
-    queryset: QuerySet[Listing],
-    request: HttpRequest,
-) -> tuple[QuerySet[Listing], bool]:
+
+def _get_user_distance_context(request: HttpRequest) -> UserDistanceContext | None:
     if not request.user.is_authenticated:
-        return queryset, False
+        return None
 
     try:
-        user_profile: UserProfile = UserProfile.objects.select_related("city").get(user=request.user)
+        user_profile: UserProfile = UserProfile.objects.select_related("city").only(
+            "city__latitude",
+            "city__longitude",
+        ).get(user=request.user)
     except UserProfile.DoesNotExist:
-        return queryset, False
+        return None
 
-    user_latitude: float = float(user_profile.city.latitude)
-    user_longitude: float = float(user_profile.city.longitude)
+    return UserDistanceContext(
+        latitude=float(user_profile.city.latitude),
+        longitude=float(user_profile.city.longitude),
+    )
 
+
+
+def _apply_distance_radius_prefilter(
+    queryset: QuerySet[Listing],
+    user_distance_context: UserDistanceContext,
+    radius_miles: int,
+) -> QuerySet[Listing]:
+    candidate_city_ids: QuerySet[City] = _get_candidate_city_ids_within_radius(
+        origin_latitude=user_distance_context.latitude,
+        origin_longitude=user_distance_context.longitude,
+        radius_miles=radius_miles,
+    )
+
+    return queryset.filter(city_id__in=candidate_city_ids)
+
+
+
+def _get_candidate_city_ids_within_radius(
+    *,
+    origin_latitude: float,
+    origin_longitude: float,
+    radius_miles: int,
+) -> QuerySet[City]:
+    latitude_delta: float = radius_miles / MILES_PER_LATITUDE_DEGREE
+
+    longitude_scale: float = abs(cos(radians(origin_latitude)))
+    if longitude_scale < MINIMUM_LONGITUDE_SCALE:
+        longitude_delta: float = 180.0
+    else:
+        longitude_delta = radius_miles / (
+            MILES_PER_LONGITUDE_DEGREE_AT_EQUATOR * longitude_scale
+        )
+
+    minimum_latitude: Decimal = Decimal(str(max(-90.0, origin_latitude - latitude_delta)))
+    maximum_latitude: Decimal = Decimal(str(min(90.0, origin_latitude + latitude_delta)))
+
+    minimum_longitude_value: float = origin_longitude - longitude_delta
+    maximum_longitude_value: float = origin_longitude + longitude_delta
+
+    candidate_cities: QuerySet[City] = City.objects.filter(
+        latitude__gte=minimum_latitude,
+        latitude__lte=maximum_latitude,
+    )
+
+    if minimum_longitude_value < -180.0 or maximum_longitude_value > 180.0:
+        normalized_minimum_longitude: Decimal = Decimal(
+            str(((minimum_longitude_value + 180.0) % 360.0) - 180.0)
+        )
+        normalized_maximum_longitude: Decimal = Decimal(
+            str(((maximum_longitude_value + 180.0) % 360.0) - 180.0)
+        )
+        candidate_cities = candidate_cities.filter(
+            Q(longitude__gte=normalized_minimum_longitude)
+            | Q(longitude__lte=normalized_maximum_longitude)
+        )
+    else:
+        minimum_longitude: Decimal = Decimal(str(max(-180.0, minimum_longitude_value)))
+        maximum_longitude: Decimal = Decimal(str(min(180.0, maximum_longitude_value)))
+        candidate_cities = candidate_cities.filter(
+            longitude__gte=minimum_longitude,
+            longitude__lte=maximum_longitude,
+        )
+
+    return candidate_cities.values("city_id")
+
+
+
+def _annotate_distance_miles(
+    queryset: QuerySet[Listing],
+    user_distance_context: UserDistanceContext,
+) -> QuerySet[Listing]:
     listing_latitude = Cast(F("city__latitude"), FloatField())
     listing_longitude = Cast(F("city__longitude"), FloatField())
 
     cosine_term = (
-        Cos(Radians(Value(user_latitude)))
+        Cos(Radians(Value(user_distance_context.latitude)))
         * Cos(Radians(listing_latitude))
-        * Cos(Radians(listing_longitude) - Radians(Value(user_longitude)))
-        + Sin(Radians(Value(user_latitude))) * Sin(Radians(listing_latitude))
+        * Cos(Radians(listing_longitude) - Radians(Value(user_distance_context.longitude)))
+        + Sin(Radians(Value(user_distance_context.latitude))) * Sin(Radians(listing_latitude))
     )
 
     bounded_cosine_term = Greatest(Value(-1.0), Least(Value(1.0), cosine_term))
@@ -284,7 +387,8 @@ def _annotate_distance_miles(
         output_field=FloatField(),
     )
 
-    return queryset.annotate(distance_miles=distance_expression), True
+    return queryset.annotate(distance_miles=distance_expression)
+
 
 
 def _apply_dynamic_attribute_filters(
@@ -361,6 +465,7 @@ def _apply_dynamic_attribute_filters(
     return queryset
 
 
+
 def _apply_sorting(
     queryset: QuerySet[Listing],
     sort_value: str,
@@ -387,6 +492,7 @@ def _apply_sorting(
     return queryset.order_by("-created_at", "-listing_id")
 
 
+
 def _build_dynamic_attribute_sections(
     filter_form: ListingSearchForm,
 ) -> list[DynamicAttributeSection]:
@@ -402,6 +508,7 @@ def _build_dynamic_attribute_sections(
         )
 
     return sections
+
 
 
 def _build_query_string_without_page(query_dict: QueryDict | None) -> str:
