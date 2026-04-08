@@ -1,0 +1,34 @@
+{% extends 'sidebar_content_view.html' %}
+
+{% block page_content %}
+<div class="container-fluid px-0">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">User Profile</h1>
+        <p class="text-body-secondary mb-0">Public-facing profile details for the selected marketplace user.</p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row gap-4 align-items-md-center">
+                {% if viewed_profile and viewed_profile.avatar %}
+                <img class="admin-selected-user-avatar rounded-circle" src="{{ viewed_profile.avatar.url }}" alt="{{ viewed_user.email }} avatar">
+                {% else %}
+                <div class="admin-selected-user-avatar admin-selected-user-avatar-placeholder rounded-circle" aria-hidden="true">
+                    {{ viewed_user.email|slice:":1"|upper }}
+                </div>
+                {% endif %}
+                <div>
+                    <h2 class="h3 mb-1">{{ viewed_user.first_name }} {{ viewed_user.last_name }}</h2>
+                    <div class="text-body-secondary mb-2">{{ viewed_user.email }}</div>
+                    {% if viewed_profile and viewed_profile.city %}
+                    <div class="text-body-secondary">{{ viewed_profile.city.city_name }}, {{ viewed_profile.city.state.state_code }}</div>
+                    {% endif %}
+                    {% if viewed_profile and viewed_profile.bio %}
+                    <p class="mb-0 mt-3">{{ viewed_profile.bio }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

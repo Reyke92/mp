@@ -1,0 +1,93 @@
+<div class="card shadow-sm border-0 admin-selected-user-card admin-selected-listing-card">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-center">
+            {% if selected_listing %}
+            <div class="d-flex flex-column flex-lg-row align-items-start gap-3 admin-selected-listing-identity">
+                <div class="admin-selected-listing-thumb-wrap flex-shrink-0">
+                    {% if selected_listing.primary_image_url %}
+                    <img class="admin-selected-listing-thumb rounded-4" src="{{ selected_listing.primary_image_url }}" alt="{{ selected_listing.title }} image">
+                    {% else %}
+                    <div class="admin-selected-listing-thumb admin-selected-listing-thumb-placeholder rounded-4" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="2.25rem" height="2.25rem" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M14.002 3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm0 1H2v8h12z"></path>
+                            <path d="m10.648 8.646-2.5-2.5a.5.5 0 0 0-.707 0L3.646 9.94a.5.5 0 0 0 .354.854h8a.5.5 0 0 0 .354-.854l-1.706-1.707a.5.5 0 0 0-.707 0z"></path>
+                            <path d="M4.502 5.5a1 1 0 1 1 2 0 1 1 0 0 1-2 0"></path>
+                        </svg>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="min-w-0">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Selected Listing</div>
+                    <h2 class="h4 mb-2 text-break">{{ selected_listing.title }}</h2>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2 admin-selected-listing-email-row">
+                        <a class="text-decoration-none text-body-secondary text-break" href="{{ selected_listing.seller_profile_url }}">{{ selected_listing.seller_email_address }}</a>
+                        <button
+                            class="btn btn-sm btn-outline-secondary admin-copy-email-button"
+                            type="button"
+                            data-copy-value="{{ selected_listing.seller_email_address }}"
+                            data-default-label="Copy Email"
+                            aria-label="Copy seller email"
+                        >
+                            <span class="d-inline-flex align-items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                                    <path d="M10 1.5a1.5 1.5 0 0 1 1.5 1.5v1H10z"></path>
+                                    <path d="M4 0a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.5L9.5 0zm5 1.5V4a1 1 0 0 0 1 1h2.5V12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z"></path>
+                                </svg>
+                                <span>Copy Email</span>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                        <span class="marketplace-chip admin-listing-metric-chip">${{ selected_listing.price_amount|floatformat:2 }}</span>
+                        <span class="marketplace-chip admin-listing-metric-chip">{{ selected_listing.view_count }} view{{ selected_listing.view_count|pluralize }}</span>
+                        <span class="marketplace-chip admin-role-chip">{{ selected_listing.category_label }}</span>
+                        <span class="listing-status-badge {% if selected_listing.status_variant == 'active' %}status-active{% elif selected_listing.status_variant == 'frozen' %}status-frozen{% else %}status-deleted{% endif %}">{{ selected_listing.status_label }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-selected-user-actions w-100 w-xl-auto">
+                <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Actions</div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if selected_listing.can_freeze %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% for key, value in preserved_query_items %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                        <input type="hidden" name="page" value="{{ page_number }}">
+                        <input type="hidden" name="selected" value="{{ selected_listing.listing_id }}">
+                        <input type="hidden" name="target_listing_id" value="{{ selected_listing.listing_id }}">
+                        <input type="hidden" name="action" value="freeze_listing">
+                        <button class="btn btn-warning" type="submit">Freeze Listing</button>
+                    </form>
+                    {% endif %}
+
+                    {% if selected_listing.can_unfreeze %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% for key, value in preserved_query_items %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                        <input type="hidden" name="page" value="{{ page_number }}">
+                        <input type="hidden" name="selected" value="{{ selected_listing.listing_id }}">
+                        <input type="hidden" name="target_listing_id" value="{{ selected_listing.listing_id }}">
+                        <input type="hidden" name="action" value="unfreeze_listing">
+                        <button class="btn btn-success" type="submit">Unfreeze Listing</button>
+                    </form>
+                    {% endif %}
+
+                    <a class="btn btn-primary" href="{{ selected_listing.listing_detail_url }}">View Listing</a>
+                </div>
+            </div>
+            {% else %}
+            <div>
+                <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Selected Listing</div>
+                <h2 class="h4 mb-2">No listing selected</h2>
+                <p class="text-body-secondary mb-0">Choose a listing from the table above to review listing details, seller information, and administrator-only actions.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

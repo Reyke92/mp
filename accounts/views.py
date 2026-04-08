@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.files import File
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from typing import Any, cast
 
@@ -15,7 +15,7 @@ from .models import UserProfile
 from core import storage
 from core.models import City, State
 from accounts.utils.storage import copy_default_avatar_for_user
-from accounts.utils.auth import authenticate_with_email
+from accounts.utils.auth import authenticate_with_email, is_user_administrator, is_user_moderator
 
 
 def login_view(request: HttpRequest) -> HttpResponse:
@@ -156,5 +156,25 @@ def edit_profile_view(request: HttpRequest) -> HttpResponse:
 
     return render(request, "accounts/profile.html", context)
 
-def view_profile_view(request, user_id:int):
-    return render(request, 'accounts/view_profile.html', context={})
+def view_profile_view(request: HttpRequest, id: int) -> HttpResponse:
+    # Do not expose this internal endpoint to anonymous users.
+    if not request.user.is_authenticated:
+        return render(request, "errors/404.html", status=404)
+
+    # Only Moderators and Administrators may access this view.
+    if not (is_user_administrator(request.user) or is_user_moderator(request.user)):
+        return render(request, "errors/404.html", status=404)
+
+    user_model = get_user_model()
+    viewed_user: Any = get_object_or_404(user_model, id=int(id))
+    viewed_profile: UserProfile | None = (
+        UserProfile.objects.select_related("city", "city__state")
+        .filter(user_id=int(id))
+        .first()
+    )
+
+    context: dict[str, Any] = {
+        "viewed_user": viewed_user,
+        "viewed_profile": viewed_profile,
+    }
+    return render(request, "accounts/view_profile.html", context)

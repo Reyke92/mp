@@ -984,3 +984,183 @@ main,
 .border-danger {
   border-color: rgba(var(--mp-red-rgb), 0.5) !important;
 }
+
+.admin-user-management-page .card {
+  background-color: var(--mp-surface);
+}
+
+.admin-user-management-filter-card,
+.admin-user-management-table-card,
+.admin-selected-user-card {
+  border: 1px solid var(--mp-border);
+}
+
+.admin-user-management-filter-card {
+  background: linear-gradient(180deg, #ffffff, var(--mp-surface-soft));
+}
+
+.admin-user-management-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-summary-chip {
+  background-color: var(--bs-primary-bg-subtle);
+  border-color: var(--bs-primary-border-subtle);
+}
+
+.admin-user-table thead th {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  color: var(--mp-text-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom-color: var(--mp-border-strong);
+  background-color: var(--mp-surface-soft);
+}
+
+.admin-user-table tbody td {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom-color: var(--mp-border);
+}
+
+.admin-user-table tbody tr {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-user-table tbody tr:hover {
+  background-color: var(--mp-surface-subtle);
+}
+
+.admin-user-table-row-selected {
+  background-color: rgba(var(--mp-primary-rgb), 0.07);
+}
+
+.admin-role-chip {
+  background-color: var(--mp-surface-soft);
+}
+
+.admin-role-chip-moderator {
+  background-color: var(--bs-warning-bg-subtle);
+  border-color: var(--bs-warning-border-subtle);
+  color: var(--mp-deep-space);
+}
+
+.admin-role-chip-administrator {
+  background-color: rgba(var(--mp-aqua-rgb), 0.28);
+  border-color: rgba(var(--mp-aqua-rgb), 0.75);
+  color: var(--mp-deep-space);
+}
+
+.admin-selected-user-avatar {
+  width: 5rem;
+  height: 5rem;
+  min-width: 5rem;
+  min-height: 5rem;
+  object-fit: cover;
+  border: 1px solid var(--mp-border-strong);
+  background-color: var(--mp-surface-subtle);
+}
+
+.admin-selected-user-avatar-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--mp-deep-space);
+  background: linear-gradient(180deg, var(--mp-surface-subtle), rgba(var(--mp-aqua-rgb), 0.24));
+}
+
+.admin-selected-user-actions .btn {
+  min-width: 11.5rem;
+}
+
+.admin-user-management-alert {
+  border-width: 1px;
+}
+
+@media (max-width: 991.98px) {
+  .admin-selected-user-actions .btn {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-selected-user-actions form,
+  .admin-selected-user-actions a.btn {
+    width: 100%;
+  }
+}
+
+.admin-listing-management-page .card {
+  background-color: var(--mp-surface);
+}
+
+.admin-listing-table td:first-child,
+.admin-listing-table th:first-child {
+  min-width: 16rem;
+}
+
+.admin-listing-table td:nth-child(2),
+.admin-listing-table th:nth-child(2) {
+  min-width: 15rem;
+}
+
+.admin-selected-user-card-container,
+.admin-selected-listing-card-container {
+  position: relative;
+}
+
+.admin-selected-card-loading {
+  opacity: 0.72;
+  transition: opacity 0.15s ease;
+}
+
+.admin-selected-listing-card {
+  border: 1px solid var(--mp-border);
+  background: linear-gradient(180deg, #ffffff, var(--mp-surface-soft));
+}
+
+.admin-selected-listing-thumb-wrap {
+  width: 8rem;
+}
+
+.admin-selected-listing-thumb {
+  width: 8rem;
+  height: 8rem;
+  display: block;
+  object-fit: cover;
+  border: 1px solid var(--mp-border-strong);
+  background-color: var(--mp-surface-subtle);
+}
+
+.admin-selected-listing-thumb-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--mp-deep-space);
+  background: linear-gradient(180deg, var(--mp-surface-subtle), rgba(var(--mp-aqua-rgb), 0.24));
+}
+
+.admin-selected-listing-email-row .btn {
+  --bs-btn-padding-y: 0.25rem;
+  --bs-btn-padding-x: 0.6rem;
+}
+
+.admin-listing-metric-chip {
+  background-color: rgba(var(--mp-aqua-rgb), 0.18);
+  border-color: rgba(var(--mp-aqua-rgb), 0.52);
+  color: var(--mp-deep-space);
+}
+
+@media (max-width: 991.98px) {
+  .admin-selected-listing-thumb-wrap,
+  .admin-selected-listing-thumb {
+    width: 6rem;
+    height: 6rem;
+  }
+}

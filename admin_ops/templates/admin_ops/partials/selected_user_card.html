@@ -1,0 +1,99 @@
+<div class="card shadow-sm border-0 admin-selected-user-card">
+    <div class="card-body p-4">
+        <div class="d-flex flex-column flex-xl-row justify-content-between gap-4 align-items-xl-center">
+            {% if selected_user %}
+            <div class="d-flex align-items-center gap-3 admin-selected-user-identity">
+                {% if selected_user.avatar_url %}
+                <img class="admin-selected-user-avatar rounded-circle" src="{{ selected_user.avatar_url }}" alt="{{ selected_user.email_address }} avatar">
+                {% else %}
+                <div class="admin-selected-user-avatar admin-selected-user-avatar-placeholder rounded-circle" aria-hidden="true">
+                    {{ selected_user.email_address|slice:":1"|upper }}
+                </div>
+                {% endif %}
+                <div class="min-w-0">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Selected User</div>
+                    <h2 class="h4 mb-1 text-truncate">{{ selected_user.first_name }} {{ selected_user.last_name }}</h2>
+                    <a class="text-decoration-none text-body-secondary text-truncate d-inline-block" href="{{ selected_user.profile_url }}">{{ selected_user.email_address }}</a>
+                    <div class="d-flex flex-wrap gap-2 mt-3">
+                        {% if selected_user.role_name %}
+                        <span class="marketplace-chip admin-role-chip {% if selected_user.role_name == 'Administrator' %}admin-role-chip-administrator{% elif selected_user.role_name == 'Moderator' %}admin-role-chip-moderator{% endif %}">{{ selected_user.role_name }}</span>
+                        {% else %}
+                        <span class="marketplace-chip admin-role-chip">No role</span>
+                        {% endif %}
+                        <span class="listing-status-badge {% if selected_user.account_status_variant == 'active' %}status-active{% else %}status-deleted{% endif %}">{{ selected_user.account_status_label }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-selected-user-actions w-100 w-xl-auto">
+                <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Actions</div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if selected_user.can_assign_moderator %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% for key, value in preserved_query_items %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                        <input type="hidden" name="page" value="{{ page_number }}">
+                        <input type="hidden" name="selected" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="target_user_id" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="action" value="assign_moderator">
+                        <button class="btn btn-outline-primary" type="submit">Assign Moderator</button>
+                    </form>
+                    {% endif %}
+
+                    {% if selected_user.can_unassign_moderator %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% for key, value in preserved_query_items %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                        <input type="hidden" name="page" value="{{ page_number }}">
+                        <input type="hidden" name="selected" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="target_user_id" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="action" value="unassign_moderator">
+                        <button class="btn btn-outline-secondary" type="submit">Unassign Moderator</button>
+                    </form>
+                    {% endif %}
+
+                    {% if selected_user.can_ban %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% for key, value in preserved_query_items %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                        <input type="hidden" name="page" value="{{ page_number }}">
+                        <input type="hidden" name="selected" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="target_user_id" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="action" value="ban_user">
+                        <button class="btn btn-danger" type="submit">Ban User</button>
+                    </form>
+                    {% endif %}
+
+                    {% if selected_user.can_unban %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% for key, value in preserved_query_items %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endfor %}
+                        <input type="hidden" name="page" value="{{ page_number }}">
+                        <input type="hidden" name="selected" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="target_user_id" value="{{ selected_user.user_id }}">
+                        <input type="hidden" name="action" value="unban_user">
+                        <button class="btn btn-success" type="submit">Unban User</button>
+                    </form>
+                    {% endif %}
+
+                    <a class="btn btn-primary" href="{{ selected_user.view_messages_url }}">View Messages</a>
+                </div>
+            </div>
+            {% else %}
+            <div>
+                <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Selected User</div>
+                <h2 class="h4 mb-2">No user selected</h2>
+                <p class="text-body-secondary mb-0">Choose a user from the table above to review account details and administrator-only actions.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

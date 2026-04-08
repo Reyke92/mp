@@ -1,0 +1,24 @@
+{% extends 'sidebar_content_view.html' %}
+
+{% block page_content %}
+<div class="container-fluid px-0">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">User Conversations</h1>
+        <p class="text-body-secondary mb-0">
+            This administrator oversight view has been scaffolded for the messaging integration phase.
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <h2 class="h4 mb-2">Read-only oversight view coming soon</h2>
+            <p class="text-body-secondary mb-3">
+                The selected user ID is <span class="fw-semibold text-body">{{ oversight_user_id }}</span>. The final implementation will show the user’s conversations and message history in a read-only administrator oversight workflow.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-primary" href="{% url 'user_management' %}">Back to User Management</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
