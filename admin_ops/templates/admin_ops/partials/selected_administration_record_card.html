@@ -1,0 +1,175 @@
+<div class="card shadow-sm border-0 admin-selected-administration-card">
+    <div class="card-body p-4">
+        {% if selected_record %}
+        <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Selected Record</div>
+        <h2 class="h4 mb-3">{{ selected_record.action_label }}</h2>
+
+        <div class="row g-4 align-items-stretch">
+            <div class="col-12 col-xl-4">
+                <div class="admin-moderation-panel h-100">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Acting Administrator</div>
+                    <div class="d-flex align-items-center gap-3">
+                        {% if selected_record.actor_avatar_url %}
+                        <img class="admin-selected-user-avatar rounded-circle" src="{{ selected_record.actor_avatar_url }}" alt="{{ selected_record.actor_email_address }} avatar">
+                        {% else %}
+                        <div class="admin-selected-user-avatar admin-selected-user-avatar-placeholder rounded-circle" aria-hidden="true">
+                            {{ selected_record.actor_email_address|slice:":1"|upper }}
+                        </div>
+                        {% endif %}
+
+                        <div class="min-w-0">
+                            <h3 class="h5 mb-1 text-truncate">{{ selected_record.actor_last_name }}, {{ selected_record.actor_first_name }}</h3>
+                            <a class="text-decoration-none text-body-secondary text-break" href="{{ selected_record.actor_profile_url }}">{{ selected_record.actor_email_address }}</a>
+                        </div>
+                    </div>
+
+                    {% if selected_record.notes %}
+                    <div class="admin-moderation-notes mt-3">
+                        <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Notes</div>
+                        <p class="mb-0 text-body-secondary">{{ selected_record.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="admin-moderation-panel h-100">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Target Preview</div>
+
+                    {% if selected_record.target_listing_id %}
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="admin-moderation-preview-thumb-wrap flex-shrink-0">
+                            {% if selected_record.target_listing_primary_image_url %}
+                            <img class="admin-moderation-preview-thumb rounded-4" src="{{ selected_record.target_listing_primary_image_url }}" alt="{{ selected_record.target_title }} image">
+                            {% else %}
+                            <div class="admin-moderation-preview-thumb admin-selected-listing-thumb-placeholder rounded-4" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="2rem" height="2rem" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M14.002 3a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm0 1H2v8h12z"></path>
+                                    <path d="m10.648 8.646-2.5-2.5a.5.5 0 0 0-.707 0L3.646 9.94a.5.5 0 0 0 .354.854h8a.5.5 0 0 0 .354-.854l-1.706-1.707a.5.5 0 0 0-.707 0z"></path>
+                                    <path d="M4.502 5.5a1 1 0 1 1 2 0 1 1 0 0 1-2 0"></path>
+                                </svg>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="min-w-0">
+                            <h3 class="h5 mb-1 admin-target-title">{{ selected_record.target_title }}</h3>
+                            {% if selected_record.target_owner_email_address %}
+                            <div class="text-body-secondary text-break">{{ selected_record.target_owner_email_address }}</div>
+                            {% endif %}
+                            {% if selected_record.target_listing_view_count is not None %}
+                            <div class="mt-2">
+                                <span class="marketplace-chip admin-listing-metric-chip">{{ selected_record.target_listing_view_count }} view{{ selected_record.target_listing_view_count|pluralize }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% elif selected_record.target_user_id %}
+                    <div class="d-flex align-items-center gap-3">
+                        {% if selected_record.target_user_avatar_url %}
+                        <img class="admin-selected-user-avatar rounded-circle" src="{{ selected_record.target_user_avatar_url }}" alt="{{ selected_record.target_user_email_address }} avatar">
+                        {% else %}
+                        <div class="admin-selected-user-avatar admin-selected-user-avatar-placeholder rounded-circle" aria-hidden="true">
+                            {{ selected_record.target_user_email_address|default:"?"|slice:":1"|upper }}
+                        </div>
+                        {% endif %}
+
+                        <div class="min-w-0">
+                            <h3 class="h5 mb-1 text-truncate">{{ selected_record.target_user_first_name }} {{ selected_record.target_user_last_name }}</h3>
+                            {% if selected_record.target_profile_url %}
+                            <a class="text-decoration-none text-body-secondary text-break" href="{{ selected_record.target_profile_url }}">{{ selected_record.target_user_email_address }}</a>
+                            {% else %}
+                            <div class="text-body-secondary text-break">{{ selected_record.target_user_email_address }}</div>
+                            {% endif %}
+                            <div class="d-flex flex-wrap gap-2 mt-3">
+                                {% if selected_record.target_user_role_name %}
+                                <span class="marketplace-chip admin-role-chip {% if selected_record.target_user_role_name == 'Administrator' %}admin-role-chip-administrator{% elif selected_record.target_user_role_name == 'Moderator' %}admin-role-chip-moderator{% endif %}">{{ selected_record.target_user_role_name }}</span>
+                                {% endif %}
+                                {% if selected_record.target_user_status_label %}
+                                <span class="listing-status-badge {% if selected_record.target_user_status_label == 'Active' %}status-active{% else %}status-deleted{% endif %}">{{ selected_record.target_user_status_label }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="admin-moderation-panel h-100">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Actions</div>
+                    <div class="d-flex flex-wrap gap-2 admin-selected-user-actions admin-administration-actions">
+                        {% if selected_record.can_freeze_listing %}
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% for key, value in preserved_query_items %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endfor %}
+                            <input type="hidden" name="page" value="{{ page_number }}">
+                            <input type="hidden" name="selected" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="administration_action_id" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="action" value="freeze_listing">
+                            <button class="btn btn-warning" type="submit">Freeze Listing</button>
+                        </form>
+                        {% endif %}
+
+                        {% if selected_record.can_unfreeze_listing %}
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% for key, value in preserved_query_items %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endfor %}
+                            <input type="hidden" name="page" value="{{ page_number }}">
+                            <input type="hidden" name="selected" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="administration_action_id" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="action" value="unfreeze_listing">
+                            <button class="btn btn-success" type="submit">Unfreeze Listing</button>
+                        </form>
+                        {% endif %}
+
+                        {% if selected_record.can_ban_user %}
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% for key, value in preserved_query_items %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endfor %}
+                            <input type="hidden" name="page" value="{{ page_number }}">
+                            <input type="hidden" name="selected" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="administration_action_id" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="action" value="ban_user">
+                            <button class="btn btn-danger" type="submit">Ban User</button>
+                        </form>
+                        {% endif %}
+
+                        {% if selected_record.can_unban_user %}
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            {% for key, value in preserved_query_items %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endfor %}
+                            <input type="hidden" name="page" value="{{ page_number }}">
+                            <input type="hidden" name="selected" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="administration_action_id" value="{{ selected_record.action_id }}">
+                            <input type="hidden" name="action" value="unban_user">
+                            <button class="btn btn-success" type="submit">Unban User</button>
+                        </form>
+                        {% endif %}
+
+                        {% if selected_record.listing_detail_url %}
+                        <a class="btn btn-primary" href="{{ selected_record.listing_detail_url }}">View Listing</a>
+                        {% elif selected_record.target_profile_url %}
+                        <a class="btn btn-primary" href="{{ selected_record.target_profile_url }}">View Profile</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div>
+            <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Selected Record</div>
+            <h2 class="h4 mb-2">No administration record selected</h2>
+            <p class="text-body-secondary mb-0">Choose an administration record from the table above to review the actor, the action target, and administrator-only follow-up actions.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>

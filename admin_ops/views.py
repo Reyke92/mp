@@ -10,8 +10,16 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from admin_ops.forms import ListingManagementFilterForm, UserManagementFilterForm
+from admin_ops.forms import AdministrationLogFilterForm, ListingManagementFilterForm, ModerationLogFilterForm, UserManagementFilterForm
 from admin_ops.utils.roles import is_user_administrator
+from admin_ops.utils.administration_log import (
+    AdministrationLogActionError,
+    AdministrationLogPermissionError,
+    UnsupportedAdministrationLogActionError,
+    build_administration_log_page_context,
+    build_selected_administration_record_card_context,
+    perform_administration_log_action,
+)
 from admin_ops.utils.listing_management import (
     ListingManagementActionError,
     ListingManagementPermissionError,
@@ -19,6 +27,14 @@ from admin_ops.utils.listing_management import (
     build_listing_management_page_context,
     build_selected_listing_card_context,
     perform_listing_management_action,
+)
+from admin_ops.utils.moderation_log import (
+    ModerationLogActionError,
+    ModerationLogPermissionError,
+    UnsupportedModerationLogActionError,
+    build_moderation_log_page_context,
+    build_selected_moderation_report_card_context,
+    perform_moderation_log_action,
 )
 from admin_ops.utils.user_management import (
     UnsupportedUserManagementActionError,
@@ -106,6 +122,160 @@ def user_management_selected_card_view(request: HttpRequest, user_id: int) -> Ht
     }
     return render(request, "admin_ops/partials/selected_user_card.html", context)
 
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def moderation_log_view(request: HttpRequest) -> HttpResponse:
+    _enforce_administrator_access(request)
+
+    if request.method == "POST":
+        response: HttpResponse = _handle_moderation_log_post(request)
+        return response
+
+    filter_form: ModerationLogFilterForm = ModerationLogFilterForm(request.GET or None)
+    if not filter_form.is_valid():
+        filter_form = ModerationLogFilterForm()
+
+    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
+    selected_action_id: int | None = _parse_optional_int(request.GET.get("selected"))
+    page_number: int = _parse_page_number(request.GET.get("page"))
+
+    page_context = build_moderation_log_page_context(
+        search_email=str(cleaned_data.get("search_email", "") or ""),
+        moderation_action_type=str(cleaned_data.get("moderation_action_type", "") or ""),
+        report_target_type=str(cleaned_data.get("report_target_type", "") or ""),
+        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
+        page_number=page_number,
+        selected_action_id=selected_action_id,
+        base_url=reverse("moderation_log"),
+        acting_user_id=int(request.user.id),
+    )
+
+    context: dict[str, Any] = {
+        "filter_form": filter_form,
+        "page_obj": page_context.page_obj,
+        "table_rows": page_context.table_rows,
+        "selected_report": page_context.selected_report,
+        "selected_action_id": page_context.selected_action_id,
+        "total_action_count": page_context.total_action_count,
+        "filter_summary_parts": page_context.filter_summary_parts,
+        "preserved_query_string_without_page": page_context.preserved_query_string_without_page,
+        "preserved_query_string_without_selected": page_context.preserved_query_string_without_selected,
+        "preserved_query_items": page_context.preserved_query_items,
+        "page_range": page_context.page_range,
+        "current_page_number": page_context.page_obj.number,
+    }
+    return render(request, "admin_ops/moderation_log.html", context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def moderation_log_selected_card_view(request: HttpRequest, action_id: int) -> HttpResponse:
+    _enforce_administrator_access(request)
+
+    filter_form: ModerationLogFilterForm = ModerationLogFilterForm(request.GET or None)
+    if not filter_form.is_valid():
+        filter_form = ModerationLogFilterForm()
+
+    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
+    page_number: int = _parse_page_number(request.GET.get("page"))
+
+    card_context = build_selected_moderation_report_card_context(
+        action_id=int(action_id),
+        search_email=str(cleaned_data.get("search_email", "") or ""),
+        moderation_action_type=str(cleaned_data.get("moderation_action_type", "") or ""),
+        report_target_type=str(cleaned_data.get("report_target_type", "") or ""),
+        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
+        page_number=page_number,
+        acting_user_id=int(request.user.id),
+    )
+    if card_context.selected_report is None:
+        raise Http404
+
+    context: dict[str, Any] = {
+        "selected_report": card_context.selected_report,
+        "preserved_query_items": card_context.preserved_query_items,
+        "page_number": card_context.page_number,
+    }
+    return render(request, "admin_ops/partials/selected_moderation_report_card.html", context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def administration_log_view(request: HttpRequest) -> HttpResponse:
+    _enforce_administrator_access(request)
+
+    if request.method == "POST":
+        response: HttpResponse = _handle_administration_log_post(request)
+        return response
+
+    filter_form: AdministrationLogFilterForm = AdministrationLogFilterForm(request.GET or None)
+    if not filter_form.is_valid():
+        filter_form = AdministrationLogFilterForm()
+
+    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
+    selected_action_id: int | None = _parse_optional_int(request.GET.get("selected"))
+    page_number: int = _parse_page_number(request.GET.get("page"))
+
+    page_context = build_administration_log_page_context(
+        search_email=str(cleaned_data.get("search_email", "") or ""),
+        administration_action_type=str(cleaned_data.get("administration_action_type", "") or ""),
+        target_type=str(cleaned_data.get("target_type", "") or ""),
+        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
+        page_number=page_number,
+        selected_action_id=selected_action_id,
+        base_url=reverse("administration_log"),
+        acting_user_id=int(request.user.id),
+    )
+
+    context: dict[str, Any] = {
+        "filter_form": filter_form,
+        "page_obj": page_context.page_obj,
+        "table_rows": page_context.table_rows,
+        "selected_record": page_context.selected_record,
+        "selected_action_id": page_context.selected_action_id,
+        "total_action_count": page_context.total_action_count,
+        "filter_summary_parts": page_context.filter_summary_parts,
+        "preserved_query_string_without_page": page_context.preserved_query_string_without_page,
+        "preserved_query_string_without_selected": page_context.preserved_query_string_without_selected,
+        "preserved_query_items": page_context.preserved_query_items,
+        "page_range": page_context.page_range,
+        "current_page_number": page_context.page_obj.number,
+    }
+    return render(request, "admin_ops/administration_log.html", context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def administration_log_selected_card_view(request: HttpRequest, action_id: int) -> HttpResponse:
+    _enforce_administrator_access(request)
+
+    filter_form: AdministrationLogFilterForm = AdministrationLogFilterForm(request.GET or None)
+    if not filter_form.is_valid():
+        filter_form = AdministrationLogFilterForm()
+
+    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
+    page_number: int = _parse_page_number(request.GET.get("page"))
+
+    card_context = build_selected_administration_record_card_context(
+        action_id=int(action_id),
+        search_email=str(cleaned_data.get("search_email", "") or ""),
+        administration_action_type=str(cleaned_data.get("administration_action_type", "") or ""),
+        target_type=str(cleaned_data.get("target_type", "") or ""),
+        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
+        page_number=page_number,
+        acting_user_id=int(request.user.id),
+    )
+    if card_context.selected_record is None:
+        raise Http404
+
+    context: dict[str, Any] = {
+        "selected_record": card_context.selected_record,
+        "preserved_query_items": card_context.preserved_query_items,
+        "page_number": card_context.page_number,
+    }
+    return render(request, "admin_ops/partials/selected_administration_record_card.html", context)
 
 
 @login_required
@@ -264,10 +434,120 @@ def _handle_user_management_post(request: HttpRequest) -> HttpResponse:
 
 
 
+def _handle_administration_log_post(request: HttpRequest) -> HttpResponse:
+    action_name: str = str(request.POST.get("action", "")).strip()
+    administration_action_id: int | None = _parse_optional_int(request.POST.get("administration_action_id"))
+
+    if administration_action_id is None:
+        messages.error(request, "Choose a valid administration record before running an administrative action.")
+        return redirect(_build_administration_log_return_url(request))
+
+    requesting_user_id: int = int(request.user.id)
+
+    try:
+        success_message: str = perform_administration_log_action(
+            requesting_user_id=requesting_user_id,
+            administration_action_id=administration_action_id,
+            action_name=action_name,
+        )
+    except AdministrationLogPermissionError as exc:
+        messages.error(request, str(exc))
+    except AdministrationLogActionError as exc:
+        messages.error(request, str(exc))
+    except UnsupportedAdministrationLogActionError:
+        messages.error(request, "That administration-log action is not supported yet.")
+    except PermissionDenied:
+        raise
+    except Exception:
+        messages.error(request, "The administrative action could not be completed. Please review the selected administration record and try again.")
+    else:
+        messages.success(request, success_message)
+
+    return redirect(_build_administration_log_return_url(request, selected_action_id=administration_action_id))
+
+
+def _handle_moderation_log_post(request: HttpRequest) -> HttpResponse:
+    action_name: str = str(request.POST.get("action", "")).strip()
+    moderation_action_id: int | None = _parse_optional_int(request.POST.get("moderation_action_id"))
+
+    if moderation_action_id is None:
+        messages.error(request, "Choose a valid moderation record before running an administrative action.")
+        return redirect(_build_moderation_log_return_url(request))
+
+    requesting_user_id: int = int(request.user.id)
+
+    try:
+        success_message: str = perform_moderation_log_action(
+            requesting_user_id=requesting_user_id,
+            moderation_action_id=moderation_action_id,
+            action_name=action_name,
+        )
+    except ModerationLogPermissionError as exc:
+        messages.error(request, str(exc))
+    except ModerationLogActionError as exc:
+        messages.error(request, str(exc))
+    except UnsupportedModerationLogActionError:
+        messages.error(request, "That moderation-log action is not supported yet.")
+    except PermissionDenied:
+        raise
+    except Exception:
+        messages.error(request, "The administrative action could not be completed. Please review the selected moderation record and try again.")
+    else:
+        messages.success(request, success_message)
+
+    return redirect(_build_moderation_log_return_url(request, selected_action_id=moderation_action_id))
+
+
 def _enforce_administrator_access(request: HttpRequest) -> None:
     if not is_user_administrator(request.user):
         raise PermissionDenied
 
+
+
+def _build_administration_log_return_url(request: HttpRequest, selected_action_id: int | None = None) -> str:
+    query_items: list[tuple[str, str]] = []
+    for key in ("search_email", "administration_action_type", "target_type", "sort_by", "page"):
+        value: str = str(request.POST.get(key, "")).strip()
+        if value != "":
+            query_items.append((key, value))
+
+    resolved_selected_action_id: int | None = selected_action_id
+    if resolved_selected_action_id is None:
+        resolved_selected_action_id = _parse_optional_int(request.POST.get("selected"))
+
+    if resolved_selected_action_id is not None:
+        query_items.append(("selected", str(resolved_selected_action_id)))
+
+    base_url: str = reverse("administration_log")
+    if not query_items:
+        return base_url
+
+    from urllib.parse import urlencode
+
+    return f"{base_url}?{urlencode(query_items, doseq=True)}"
+
+
+def _build_moderation_log_return_url(request: HttpRequest, selected_action_id: int | None = None) -> str:
+    query_items: list[tuple[str, str]] = []
+    for key in ("search_email", "moderation_action_type", "report_target_type", "sort_by", "page"):
+        value: str = str(request.POST.get(key, "")).strip()
+        if value != "":
+            query_items.append((key, value))
+
+    resolved_selected_action_id: int | None = selected_action_id
+    if resolved_selected_action_id is None:
+        resolved_selected_action_id = _parse_optional_int(request.POST.get("selected"))
+
+    if resolved_selected_action_id is not None:
+        query_items.append(("selected", str(resolved_selected_action_id)))
+
+    base_url: str = reverse("moderation_log")
+    if not query_items:
+        return base_url
+
+    from urllib.parse import urlencode
+
+    return f"{base_url}?{urlencode(query_items, doseq=True)}"
 
 
 def _build_listing_management_return_url(request: HttpRequest, selected_listing_id: int | None = None) -> str:

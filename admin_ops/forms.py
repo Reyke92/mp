@@ -189,3 +189,167 @@ class ListingManagementFilterForm(forms.Form):
             category_choices.append((str(category.category_id), f"{parent_name} / {category_name}"))
 
         return tuple(category_choices)
+
+
+MODERATION_LOG_ACTION_TYPE_ALL_VALUE: str = ""
+MODERATION_LOG_ACTION_TYPE_BAN_USER_VALUE: str = "ban_user"
+MODERATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE: str = "freeze_listing"
+
+MODERATION_LOG_TARGET_TYPE_ALL_VALUE: str = ""
+MODERATION_LOG_TARGET_TYPE_USER_VALUE: str = "user"
+MODERATION_LOG_TARGET_TYPE_LISTING_VALUE: str = "listing"
+
+MODERATION_LOG_SORT_MOST_RECENT_VALUE: str = "most_recent"
+MODERATION_LOG_SORT_OLDEST_VALUE: str = "oldest"
+MODERATION_LOG_SORT_ACTOR_ASC_VALUE: str = "actor_asc"
+MODERATION_LOG_SORT_ACTOR_DESC_VALUE: str = "actor_desc"
+MODERATION_LOG_SORT_ACTION_ASC_VALUE: str = "action_asc"
+MODERATION_LOG_SORT_ACTION_DESC_VALUE: str = "action_desc"
+MODERATION_LOG_SORT_TARGET_ASC_VALUE: str = "target_asc"
+MODERATION_LOG_SORT_TARGET_DESC_VALUE: str = "target_desc"
+
+
+class ModerationLogFilterForm(forms.Form):
+    search_email: forms.CharField = forms.CharField(
+        label="Search by email",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Search actor, reporter, or target email",
+                "autocomplete": "off",
+            }
+        ),
+    )
+    moderation_action_type: forms.ChoiceField = forms.ChoiceField(
+        label="Moderation action",
+        required=False,
+        choices=(
+            (MODERATION_LOG_ACTION_TYPE_ALL_VALUE, "All actions"),
+            (MODERATION_LOG_ACTION_TYPE_BAN_USER_VALUE, "Ban User"),
+            (MODERATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE, "Freeze Listing"),
+        ),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    report_target_type: forms.ChoiceField = forms.ChoiceField(
+        label="Report target type",
+        required=False,
+        choices=(
+            (MODERATION_LOG_TARGET_TYPE_ALL_VALUE, "All target types"),
+            (MODERATION_LOG_TARGET_TYPE_USER_VALUE, "User"),
+            (MODERATION_LOG_TARGET_TYPE_LISTING_VALUE, "Listing"),
+        ),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    sort_by: forms.ChoiceField = forms.ChoiceField(
+        label="Sort by",
+        required=False,
+        choices=(
+            (MODERATION_LOG_SORT_MOST_RECENT_VALUE, "Most Recent"),
+            (MODERATION_LOG_SORT_OLDEST_VALUE, "Oldest"),
+            (MODERATION_LOG_SORT_ACTOR_ASC_VALUE, "Actor (A to Z)"),
+            (MODERATION_LOG_SORT_ACTOR_DESC_VALUE, "Actor (Z to A)"),
+            (MODERATION_LOG_SORT_ACTION_ASC_VALUE, "Action (A to Z)"),
+            (MODERATION_LOG_SORT_ACTION_DESC_VALUE, "Action (Z to A)"),
+            (MODERATION_LOG_SORT_TARGET_ASC_VALUE, "Target (A to Z)"),
+            (MODERATION_LOG_SORT_TARGET_DESC_VALUE, "Target (Z to A)"),
+        ),
+        initial=MODERATION_LOG_SORT_MOST_RECENT_VALUE,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper(self)
+        self.helper.form_method = "get"
+        self.helper.form_tag = False
+
+        if not self.is_bound:
+            self.initial.setdefault("sort_by", MODERATION_LOG_SORT_MOST_RECENT_VALUE)
+
+
+ADMINISTRATION_LOG_ACTION_TYPE_ALL_VALUE: str = ""
+ADMINISTRATION_LOG_ACTION_TYPE_ADD_ROLE_VALUE: str = "add_role"
+ADMINISTRATION_LOG_ACTION_TYPE_REMOVE_ROLE_VALUE: str = "remove_role"
+ADMINISTRATION_LOG_ACTION_TYPE_BAN_USER_VALUE: str = "ban_user"
+ADMINISTRATION_LOG_ACTION_TYPE_UNBAN_USER_VALUE: str = "unban_user"
+ADMINISTRATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE: str = "freeze_listing"
+ADMINISTRATION_LOG_ACTION_TYPE_UNFREEZE_LISTING_VALUE: str = "unfreeze_listing"
+
+ADMINISTRATION_LOG_TARGET_TYPE_ALL_VALUE: str = ""
+ADMINISTRATION_LOG_TARGET_TYPE_USER_VALUE: str = "user"
+ADMINISTRATION_LOG_TARGET_TYPE_LISTING_VALUE: str = "listing"
+
+ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE: str = "most_recent"
+ADMINISTRATION_LOG_SORT_OLDEST_VALUE: str = "oldest"
+ADMINISTRATION_LOG_SORT_ACTOR_ASC_VALUE: str = "actor_asc"
+ADMINISTRATION_LOG_SORT_ACTOR_DESC_VALUE: str = "actor_desc"
+ADMINISTRATION_LOG_SORT_ACTION_ASC_VALUE: str = "action_asc"
+ADMINISTRATION_LOG_SORT_ACTION_DESC_VALUE: str = "action_desc"
+ADMINISTRATION_LOG_SORT_TARGET_ASC_VALUE: str = "target_asc"
+ADMINISTRATION_LOG_SORT_TARGET_DESC_VALUE: str = "target_desc"
+
+
+class AdministrationLogFilterForm(forms.Form):
+    search_email: forms.CharField = forms.CharField(
+        label="Search by email",
+        required=False,
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Search actor or target email",
+                "autocomplete": "off",
+            }
+        ),
+    )
+    administration_action_type: forms.ChoiceField = forms.ChoiceField(
+        label="Administration action",
+        required=False,
+        choices=(
+            (ADMINISTRATION_LOG_ACTION_TYPE_ALL_VALUE, "All actions"),
+            (ADMINISTRATION_LOG_ACTION_TYPE_ADD_ROLE_VALUE, "Add Role"),
+            (ADMINISTRATION_LOG_ACTION_TYPE_REMOVE_ROLE_VALUE, "Remove Role"),
+            (ADMINISTRATION_LOG_ACTION_TYPE_BAN_USER_VALUE, "Ban User"),
+            (ADMINISTRATION_LOG_ACTION_TYPE_UNBAN_USER_VALUE, "Unban User"),
+            (ADMINISTRATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE, "Freeze Listing"),
+            (ADMINISTRATION_LOG_ACTION_TYPE_UNFREEZE_LISTING_VALUE, "Unfreeze Listing"),
+        ),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    target_type: forms.ChoiceField = forms.ChoiceField(
+        label="Target type",
+        required=False,
+        choices=(
+            (ADMINISTRATION_LOG_TARGET_TYPE_ALL_VALUE, "All target types"),
+            (ADMINISTRATION_LOG_TARGET_TYPE_USER_VALUE, "User"),
+            (ADMINISTRATION_LOG_TARGET_TYPE_LISTING_VALUE, "Listing"),
+        ),
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    sort_by: forms.ChoiceField = forms.ChoiceField(
+        label="Sort by",
+        required=False,
+        choices=(
+            (ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE, "Most Recent"),
+            (ADMINISTRATION_LOG_SORT_OLDEST_VALUE, "Oldest"),
+            (ADMINISTRATION_LOG_SORT_ACTOR_ASC_VALUE, "Actor (A to Z)"),
+            (ADMINISTRATION_LOG_SORT_ACTOR_DESC_VALUE, "Actor (Z to A)"),
+            (ADMINISTRATION_LOG_SORT_ACTION_ASC_VALUE, "Action (A to Z)"),
+            (ADMINISTRATION_LOG_SORT_ACTION_DESC_VALUE, "Action (Z to A)"),
+            (ADMINISTRATION_LOG_SORT_TARGET_ASC_VALUE, "Target (A to Z)"),
+            (ADMINISTRATION_LOG_SORT_TARGET_DESC_VALUE, "Target (Z to A)"),
+        ),
+        initial=ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper(self)
+        self.helper.form_method = "get"
+        self.helper.form_tag = False
+
+        if not self.is_bound:
+            self.initial.setdefault("sort_by", ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE)

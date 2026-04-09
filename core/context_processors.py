@@ -89,6 +89,12 @@ _SIDEBAR_ADMIN_ITEMS: tuple[dict[str, Any], ...] = (
         "route_names": ("moderation_log",),
         "active_route_names": ("moderation_log",),
     },
+    {
+        "key": "administration_log",
+        "label": "Administration Log",
+        "route_names": ("administration_log",),
+        "active_route_names": ("administration_log",),
+    },
 )
 
 _ALL_SIDEBAR_ITEMS: tuple[dict[str, Any], ...] = (

@@ -1164,3 +1164,231 @@ main,
     height: 6rem;
   }
 }
+
+.admin-moderation-log-page .card {
+  background-color: var(--mp-surface);
+}
+
+.admin-moderation-log-filter-card,
+.admin-moderation-log-table-card,
+.admin-selected-moderation-card {
+  border: 1px solid var(--mp-border);
+}
+
+.admin-moderation-log-filter-card,
+.admin-selected-moderation-card {
+  background: linear-gradient(180deg, #ffffff, var(--mp-surface-soft));
+}
+
+.admin-moderation-log-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-moderation-table thead th {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  color: var(--mp-text-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom-color: var(--mp-border-strong);
+  background-color: var(--mp-surface-soft);
+}
+
+.admin-moderation-table tbody td {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom-color: var(--mp-border);
+}
+
+.admin-moderation-table tbody tr {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-moderation-table tbody tr:hover {
+  background-color: var(--mp-surface-subtle);
+}
+
+.admin-moderation-action-chip {
+  background-color: rgba(var(--mp-primary-rgb), 0.1);
+  border-color: rgba(var(--mp-primary-rgb), 0.28);
+  color: var(--mp-deep-space);
+}
+
+.admin-moderation-target-chip {
+  background-color: rgba(var(--mp-aqua-rgb), 0.16);
+  border-color: rgba(var(--mp-aqua-rgb), 0.46);
+  color: var(--mp-deep-space);
+}
+
+.admin-moderation-note-chip {
+  background-color: rgba(var(--mp-olive-rgb), 0.16);
+  border-color: rgba(var(--mp-olive-rgb), 0.34);
+  color: var(--mp-deep-space);
+}
+
+.admin-moderation-target-name {
+  display: inline-block;
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.admin-selected-moderation-report-card-container {
+  position: relative;
+}
+
+.admin-selected-moderation-card .h5,
+.admin-selected-moderation-card .h4 {
+  color: var(--bs-body-color);
+}
+
+.admin-moderation-panel {
+  height: 100%;
+  padding: 1.25rem;
+  border: 1px solid var(--mp-border);
+  border-radius: 1rem;
+  background-color: rgba(255, 255, 255, 0.84);
+}
+
+.admin-moderation-preview-thumb-wrap {
+  width: 5rem;
+}
+
+.admin-moderation-preview-thumb {
+  width: 5rem;
+  height: 5rem;
+  display: block;
+  object-fit: cover;
+  border: 1px solid var(--mp-border-strong);
+  background-color: var(--mp-surface-subtle);
+}
+
+.admin-target-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-moderation-notes {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--mp-border);
+}
+
+@media (max-width: 1199.98px) {
+  .admin-moderation-actions .btn {
+    width: 100%;
+  }
+
+  .admin-moderation-actions form,
+  .admin-moderation-actions a.btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-moderation-target-name {
+    max-width: 12rem;
+  }
+}
+
+
+.admin-administration-log-page .card {
+  background-color: var(--mp-surface);
+}
+
+.admin-administration-log-filter-card,
+.admin-administration-log-table-card,
+.admin-selected-administration-card {
+  border: 1px solid var(--mp-border);
+}
+
+.admin-administration-log-filter-card,
+.admin-selected-administration-card {
+  background: linear-gradient(180deg, #ffffff, var(--mp-surface-soft));
+}
+
+.admin-administration-log-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-administration-table thead th {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  color: var(--mp-text-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom-color: var(--mp-border-strong);
+  background-color: var(--mp-surface-soft);
+}
+
+.admin-administration-table tbody td {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom-color: var(--mp-border);
+}
+
+.admin-administration-table tbody tr {
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-administration-table tbody tr:hover {
+  background-color: var(--mp-surface-subtle);
+}
+
+.admin-administration-action-chip {
+  background-color: rgba(var(--mp-primary-rgb), 0.1);
+  border-color: rgba(var(--mp-primary-rgb), 0.28);
+  color: var(--mp-deep-space);
+}
+
+.admin-administration-target-chip {
+  background-color: rgba(var(--mp-aqua-rgb), 0.16);
+  border-color: rgba(var(--mp-aqua-rgb), 0.46);
+  color: var(--mp-deep-space);
+}
+
+.admin-administration-target-name {
+  display: inline-block;
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.admin-selected-administration-record-card-container {
+  position: relative;
+}
+
+.admin-selected-administration-card .h5,
+.admin-selected-administration-card .h4 {
+  color: var(--bs-body-color);
+}
+
+@media (max-width: 1199.98px) {
+  .admin-administration-actions .btn {
+    width: 100%;
+  }
+
+  .admin-administration-actions form,
+  .admin-administration-actions a.btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-administration-target-name {
+    max-width: 12rem;
+  }
+}

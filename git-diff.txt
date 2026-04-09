@@ -1,0 +1,942 @@
+diff --git a/admin_ops/forms.py b/admin_ops/forms.py
+index 02df37e..e96ba97 100644
+--- a/admin_ops/forms.py
++++ b/admin_ops/forms.py
+@@ -189,3 +189,167 @@ class ListingManagementFilterForm(forms.Form):
+             category_choices.append((str(category.category_id), f"{parent_name} / {category_name}"))
+ 
+         return tuple(category_choices)
++
++
++MODERATION_LOG_ACTION_TYPE_ALL_VALUE: str = ""
++MODERATION_LOG_ACTION_TYPE_BAN_USER_VALUE: str = "ban_user"
++MODERATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE: str = "freeze_listing"
++
++MODERATION_LOG_TARGET_TYPE_ALL_VALUE: str = ""
++MODERATION_LOG_TARGET_TYPE_USER_VALUE: str = "user"
++MODERATION_LOG_TARGET_TYPE_LISTING_VALUE: str = "listing"
++
++MODERATION_LOG_SORT_MOST_RECENT_VALUE: str = "most_recent"
++MODERATION_LOG_SORT_OLDEST_VALUE: str = "oldest"
++MODERATION_LOG_SORT_ACTOR_ASC_VALUE: str = "actor_asc"
++MODERATION_LOG_SORT_ACTOR_DESC_VALUE: str = "actor_desc"
++MODERATION_LOG_SORT_ACTION_ASC_VALUE: str = "action_asc"
++MODERATION_LOG_SORT_ACTION_DESC_VALUE: str = "action_desc"
++MODERATION_LOG_SORT_TARGET_ASC_VALUE: str = "target_asc"
++MODERATION_LOG_SORT_TARGET_DESC_VALUE: str = "target_desc"
++
++
++class ModerationLogFilterForm(forms.Form):
++    search_email: forms.CharField = forms.CharField(
++        label="Search by email",
++        required=False,
++        widget=forms.TextInput(
++            attrs={
++                "class": "form-control",
++                "placeholder": "Search actor, reporter, or target email",
++                "autocomplete": "off",
++            }
++        ),
++    )
++    moderation_action_type: forms.ChoiceField = forms.ChoiceField(
++        label="Moderation action",
++        required=False,
++        choices=(
++            (MODERATION_LOG_ACTION_TYPE_ALL_VALUE, "All actions"),
++            (MODERATION_LOG_ACTION_TYPE_BAN_USER_VALUE, "Ban User"),
++            (MODERATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE, "Freeze Listing"),
++        ),
++        widget=forms.Select(attrs={"class": "form-select"}),
++    )
++    report_target_type: forms.ChoiceField = forms.ChoiceField(
++        label="Report target type",
++        required=False,
++        choices=(
++            (MODERATION_LOG_TARGET_TYPE_ALL_VALUE, "All target types"),
++            (MODERATION_LOG_TARGET_TYPE_USER_VALUE, "User"),
++            (MODERATION_LOG_TARGET_TYPE_LISTING_VALUE, "Listing"),
++        ),
++        widget=forms.Select(attrs={"class": "form-select"}),
++    )
++    sort_by: forms.ChoiceField = forms.ChoiceField(
++        label="Sort by",
++        required=False,
++        choices=(
++            (MODERATION_LOG_SORT_MOST_RECENT_VALUE, "Most Recent"),
++            (MODERATION_LOG_SORT_OLDEST_VALUE, "Oldest"),
++            (MODERATION_LOG_SORT_ACTOR_ASC_VALUE, "Actor (A to Z)"),
++            (MODERATION_LOG_SORT_ACTOR_DESC_VALUE, "Actor (Z to A)"),
++            (MODERATION_LOG_SORT_ACTION_ASC_VALUE, "Action (A to Z)"),
++            (MODERATION_LOG_SORT_ACTION_DESC_VALUE, "Action (Z to A)"),
++            (MODERATION_LOG_SORT_TARGET_ASC_VALUE, "Target (A to Z)"),
++            (MODERATION_LOG_SORT_TARGET_DESC_VALUE, "Target (Z to A)"),
++        ),
++        initial=MODERATION_LOG_SORT_MOST_RECENT_VALUE,
++        widget=forms.Select(attrs={"class": "form-select"}),
++    )
++
++    def __init__(self, *args: Any, **kwargs: Any) -> None:
++        super().__init__(*args, **kwargs)
++
++        self.helper = FormHelper(self)
++        self.helper.form_method = "get"
++        self.helper.form_tag = False
++
++        if not self.is_bound:
++            self.initial.setdefault("sort_by", MODERATION_LOG_SORT_MOST_RECENT_VALUE)
++
++
++ADMINISTRATION_LOG_ACTION_TYPE_ALL_VALUE: str = ""
++ADMINISTRATION_LOG_ACTION_TYPE_ADD_ROLE_VALUE: str = "add_role"
++ADMINISTRATION_LOG_ACTION_TYPE_REMOVE_ROLE_VALUE: str = "remove_role"
++ADMINISTRATION_LOG_ACTION_TYPE_BAN_USER_VALUE: str = "ban_user"
++ADMINISTRATION_LOG_ACTION_TYPE_UNBAN_USER_VALUE: str = "unban_user"
++ADMINISTRATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE: str = "freeze_listing"
++ADMINISTRATION_LOG_ACTION_TYPE_UNFREEZE_LISTING_VALUE: str = "unfreeze_listing"
++
++ADMINISTRATION_LOG_TARGET_TYPE_ALL_VALUE: str = ""
++ADMINISTRATION_LOG_TARGET_TYPE_USER_VALUE: str = "user"
++ADMINISTRATION_LOG_TARGET_TYPE_LISTING_VALUE: str = "listing"
++
++ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE: str = "most_recent"
++ADMINISTRATION_LOG_SORT_OLDEST_VALUE: str = "oldest"
++ADMINISTRATION_LOG_SORT_ACTOR_ASC_VALUE: str = "actor_asc"
++ADMINISTRATION_LOG_SORT_ACTOR_DESC_VALUE: str = "actor_desc"
++ADMINISTRATION_LOG_SORT_ACTION_ASC_VALUE: str = "action_asc"
++ADMINISTRATION_LOG_SORT_ACTION_DESC_VALUE: str = "action_desc"
++ADMINISTRATION_LOG_SORT_TARGET_ASC_VALUE: str = "target_asc"
++ADMINISTRATION_LOG_SORT_TARGET_DESC_VALUE: str = "target_desc"
++
++
++class AdministrationLogFilterForm(forms.Form):
++    search_email: forms.CharField = forms.CharField(
++        label="Search by email",
++        required=False,
++        widget=forms.TextInput(
++            attrs={
++                "class": "form-control",
++                "placeholder": "Search actor or target email",
++                "autocomplete": "off",
++            }
++        ),
++    )
++    administration_action_type: forms.ChoiceField = forms.ChoiceField(
++        label="Administration action",
++        required=False,
++        choices=(
++            (ADMINISTRATION_LOG_ACTION_TYPE_ALL_VALUE, "All actions"),
++            (ADMINISTRATION_LOG_ACTION_TYPE_ADD_ROLE_VALUE, "Add Role"),
++            (ADMINISTRATION_LOG_ACTION_TYPE_REMOVE_ROLE_VALUE, "Remove Role"),
++            (ADMINISTRATION_LOG_ACTION_TYPE_BAN_USER_VALUE, "Ban User"),
++            (ADMINISTRATION_LOG_ACTION_TYPE_UNBAN_USER_VALUE, "Unban User"),
++            (ADMINISTRATION_LOG_ACTION_TYPE_FREEZE_LISTING_VALUE, "Freeze Listing"),
++            (ADMINISTRATION_LOG_ACTION_TYPE_UNFREEZE_LISTING_VALUE, "Unfreeze Listing"),
++        ),
++        widget=forms.Select(attrs={"class": "form-select"}),
++    )
++    target_type: forms.ChoiceField = forms.ChoiceField(
++        label="Target type",
++        required=False,
++        choices=(
++            (ADMINISTRATION_LOG_TARGET_TYPE_ALL_VALUE, "All target types"),
++            (ADMINISTRATION_LOG_TARGET_TYPE_USER_VALUE, "User"),
++            (ADMINISTRATION_LOG_TARGET_TYPE_LISTING_VALUE, "Listing"),
++        ),
++        widget=forms.Select(attrs={"class": "form-select"}),
++    )
++    sort_by: forms.ChoiceField = forms.ChoiceField(
++        label="Sort by",
++        required=False,
++        choices=(
++            (ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE, "Most Recent"),
++            (ADMINISTRATION_LOG_SORT_OLDEST_VALUE, "Oldest"),
++            (ADMINISTRATION_LOG_SORT_ACTOR_ASC_VALUE, "Actor (A to Z)"),
++            (ADMINISTRATION_LOG_SORT_ACTOR_DESC_VALUE, "Actor (Z to A)"),
++            (ADMINISTRATION_LOG_SORT_ACTION_ASC_VALUE, "Action (A to Z)"),
++            (ADMINISTRATION_LOG_SORT_ACTION_DESC_VALUE, "Action (Z to A)"),
++            (ADMINISTRATION_LOG_SORT_TARGET_ASC_VALUE, "Target (A to Z)"),
++            (ADMINISTRATION_LOG_SORT_TARGET_DESC_VALUE, "Target (Z to A)"),
++        ),
++        initial=ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE,
++        widget=forms.Select(attrs={"class": "form-select"}),
++    )
++
++    def __init__(self, *args: Any, **kwargs: Any) -> None:
++        super().__init__(*args, **kwargs)
++
++        self.helper = FormHelper(self)
++        self.helper.form_method = "get"
++        self.helper.form_tag = False
++
++        if not self.is_bound:
++            self.initial.setdefault("sort_by", ADMINISTRATION_LOG_SORT_MOST_RECENT_VALUE)
+diff --git a/admin_ops/urls.py b/admin_ops/urls.py
+index 5659b2d..5452225 100644
+--- a/admin_ops/urls.py
++++ b/admin_ops/urls.py
+@@ -3,6 +3,17 @@ from django.urls import path
+ from . import views
+ 
+ urlpatterns = [
++    path(
++        "admin/administration_log/selected-card/<int:action_id>/",
++        views.administration_log_selected_card_view,
++        name="administration_log_selected_card",
++    ),
++    path("admin/administration_log/", views.administration_log_view, name="administration_log"),
++    path(
++        "admin/moderation_log/selected-card/<int:action_id>/",
++        views.moderation_log_selected_card_view,
++        name="moderation_log_selected_card",
++    ),
+     path(
+         "admin/listing_management/selected-card/<int:listing_id>/",
+         views.listing_management_selected_card_view,
+@@ -14,6 +25,7 @@ urlpatterns = [
+         name="user_management_selected_card",
+     ),
+     path("admin/listing_management/", views.listing_management_view, name="listing_management"),
++    path("admin/moderation_log/", views.moderation_log_view, name="moderation_log"),
+     path("admin/user_management/", views.user_management_view, name="user_management"),
+     path(
+         "admin/oversight/conversations/<int:user_id>/",
+diff --git a/admin_ops/utils/user_management.py b/admin_ops/utils/user_management.py
+index 2e16c58..2c10bdd 100644
+--- a/admin_ops/utils/user_management.py
++++ b/admin_ops/utils/user_management.py
+@@ -36,6 +36,7 @@ from admin_ops.utils.roles import ADMINISTRATOR_ROLE_NAME, MODERATOR_ROLE_NAME,
+ 
+ PAGE_SIZE: int = 20
+ BAN_USER_ACTION_TYPE_NAME: str = "BanUser"
++UNBAN_USER_ACTION_TYPE_NAME: str = "UnbanUser"
+ USER_EMAIL_SOURCE_FIELD_NAME: str = "username"
+ 
+ 
+@@ -674,9 +675,9 @@ def _log_account_status_change(
+     target_user_id: int,
+     is_active: bool,
+ ) -> AdministrationAction:
+-    action_type: AdministrationActionType
+-    action_type, _created = AdministrationActionType.objects.get_or_create(
+-        action_type_name=BAN_USER_ACTION_TYPE_NAME,
++    action_type_name: str = UNBAN_USER_ACTION_TYPE_NAME if is_active else BAN_USER_ACTION_TYPE_NAME
++    action_type: AdministrationActionType = AdministrationActionType.objects.get(
++        action_type_name__iexact=action_type_name,
+     )
+     state_label: str = "Account status changed to Active." if is_active else "Account status changed to Banned."
+     return AdministrationAction.objects.create(
+diff --git a/admin_ops/views.py b/admin_ops/views.py
+index 2b4a9c8..4ed4e31 100644
+--- a/admin_ops/views.py
++++ b/admin_ops/views.py
+@@ -10,8 +10,16 @@ from django.shortcuts import redirect, render
+ from django.urls import reverse
+ from django.views.decorators.http import require_http_methods
+ 
+-from admin_ops.forms import ListingManagementFilterForm, UserManagementFilterForm
++from admin_ops.forms import AdministrationLogFilterForm, ListingManagementFilterForm, ModerationLogFilterForm, UserManagementFilterForm
+ from admin_ops.utils.roles import is_user_administrator
++from admin_ops.utils.administration_log import (
++    AdministrationLogActionError,
++    AdministrationLogPermissionError,
++    UnsupportedAdministrationLogActionError,
++    build_administration_log_page_context,
++    build_selected_administration_record_card_context,
++    perform_administration_log_action,
++)
+ from admin_ops.utils.listing_management import (
+     ListingManagementActionError,
+     ListingManagementPermissionError,
+@@ -20,6 +28,14 @@ from admin_ops.utils.listing_management import (
+     build_selected_listing_card_context,
+     perform_listing_management_action,
+ )
++from admin_ops.utils.moderation_log import (
++    ModerationLogActionError,
++    ModerationLogPermissionError,
++    UnsupportedModerationLogActionError,
++    build_moderation_log_page_context,
++    build_selected_moderation_report_card_context,
++    perform_moderation_log_action,
++)
+ from admin_ops.utils.user_management import (
+     UnsupportedUserManagementActionError,
+     UserManagementActionError,
+@@ -108,6 +124,160 @@ def user_management_selected_card_view(request: HttpRequest, user_id: int) -> Ht
+ 
+ 
+ 
++@login_required
++@require_http_methods(["GET", "POST"])
++def moderation_log_view(request: HttpRequest) -> HttpResponse:
++    _enforce_administrator_access(request)
++
++    if request.method == "POST":
++        response: HttpResponse = _handle_moderation_log_post(request)
++        return response
++
++    filter_form: ModerationLogFilterForm = ModerationLogFilterForm(request.GET or None)
++    if not filter_form.is_valid():
++        filter_form = ModerationLogFilterForm()
++
++    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
++    selected_action_id: int | None = _parse_optional_int(request.GET.get("selected"))
++    page_number: int = _parse_page_number(request.GET.get("page"))
++
++    page_context = build_moderation_log_page_context(
++        search_email=str(cleaned_data.get("search_email", "") or ""),
++        moderation_action_type=str(cleaned_data.get("moderation_action_type", "") or ""),
++        report_target_type=str(cleaned_data.get("report_target_type", "") or ""),
++        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
++        page_number=page_number,
++        selected_action_id=selected_action_id,
++        base_url=reverse("moderation_log"),
++        acting_user_id=int(request.user.id),
++    )
++
++    context: dict[str, Any] = {
++        "filter_form": filter_form,
++        "page_obj": page_context.page_obj,
++        "table_rows": page_context.table_rows,
++        "selected_report": page_context.selected_report,
++        "selected_action_id": page_context.selected_action_id,
++        "total_action_count": page_context.total_action_count,
++        "filter_summary_parts": page_context.filter_summary_parts,
++        "preserved_query_string_without_page": page_context.preserved_query_string_without_page,
++        "preserved_query_string_without_selected": page_context.preserved_query_string_without_selected,
++        "preserved_query_items": page_context.preserved_query_items,
++        "page_range": page_context.page_range,
++        "current_page_number": page_context.page_obj.number,
++    }
++    return render(request, "admin_ops/moderation_log.html", context)
++
++
++@login_required
++@require_http_methods(["GET"])
++def moderation_log_selected_card_view(request: HttpRequest, action_id: int) -> HttpResponse:
++    _enforce_administrator_access(request)
++
++    filter_form: ModerationLogFilterForm = ModerationLogFilterForm(request.GET or None)
++    if not filter_form.is_valid():
++        filter_form = ModerationLogFilterForm()
++
++    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
++    page_number: int = _parse_page_number(request.GET.get("page"))
++
++    card_context = build_selected_moderation_report_card_context(
++        action_id=int(action_id),
++        search_email=str(cleaned_data.get("search_email", "") or ""),
++        moderation_action_type=str(cleaned_data.get("moderation_action_type", "") or ""),
++        report_target_type=str(cleaned_data.get("report_target_type", "") or ""),
++        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
++        page_number=page_number,
++        acting_user_id=int(request.user.id),
++    )
++    if card_context.selected_report is None:
++        raise Http404
++
++    context: dict[str, Any] = {
++        "selected_report": card_context.selected_report,
++        "preserved_query_items": card_context.preserved_query_items,
++        "page_number": card_context.page_number,
++    }
++    return render(request, "admin_ops/partials/selected_moderation_report_card.html", context)
++
++
++@login_required
++@require_http_methods(["GET", "POST"])
++def administration_log_view(request: HttpRequest) -> HttpResponse:
++    _enforce_administrator_access(request)
++
++    if request.method == "POST":
++        response: HttpResponse = _handle_administration_log_post(request)
++        return response
++
++    filter_form: AdministrationLogFilterForm = AdministrationLogFilterForm(request.GET or None)
++    if not filter_form.is_valid():
++        filter_form = AdministrationLogFilterForm()
++
++    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
++    selected_action_id: int | None = _parse_optional_int(request.GET.get("selected"))
++    page_number: int = _parse_page_number(request.GET.get("page"))
++
++    page_context = build_administration_log_page_context(
++        search_email=str(cleaned_data.get("search_email", "") or ""),
++        administration_action_type=str(cleaned_data.get("administration_action_type", "") or ""),
++        target_type=str(cleaned_data.get("target_type", "") or ""),
++        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
++        page_number=page_number,
++        selected_action_id=selected_action_id,
++        base_url=reverse("administration_log"),
++        acting_user_id=int(request.user.id),
++    )
++
++    context: dict[str, Any] = {
++        "filter_form": filter_form,
++        "page_obj": page_context.page_obj,
++        "table_rows": page_context.table_rows,
++        "selected_record": page_context.selected_record,
++        "selected_action_id": page_context.selected_action_id,
++        "total_action_count": page_context.total_action_count,
++        "filter_summary_parts": page_context.filter_summary_parts,
++        "preserved_query_string_without_page": page_context.preserved_query_string_without_page,
++        "preserved_query_string_without_selected": page_context.preserved_query_string_without_selected,
++        "preserved_query_items": page_context.preserved_query_items,
++        "page_range": page_context.page_range,
++        "current_page_number": page_context.page_obj.number,
++    }
++    return render(request, "admin_ops/administration_log.html", context)
++
++
++@login_required
++@require_http_methods(["GET"])
++def administration_log_selected_card_view(request: HttpRequest, action_id: int) -> HttpResponse:
++    _enforce_administrator_access(request)
++
++    filter_form: AdministrationLogFilterForm = AdministrationLogFilterForm(request.GET or None)
++    if not filter_form.is_valid():
++        filter_form = AdministrationLogFilterForm()
++
++    cleaned_data: dict[str, Any] = filter_form.cleaned_data if filter_form.is_valid() else {}
++    page_number: int = _parse_page_number(request.GET.get("page"))
++
++    card_context = build_selected_administration_record_card_context(
++        action_id=int(action_id),
++        search_email=str(cleaned_data.get("search_email", "") or ""),
++        administration_action_type=str(cleaned_data.get("administration_action_type", "") or ""),
++        target_type=str(cleaned_data.get("target_type", "") or ""),
++        sort_by=str(cleaned_data.get("sort_by", "most_recent") or "most_recent"),
++        page_number=page_number,
++        acting_user_id=int(request.user.id),
++    )
++    if card_context.selected_record is None:
++        raise Http404
++
++    context: dict[str, Any] = {
++        "selected_record": card_context.selected_record,
++        "preserved_query_items": card_context.preserved_query_items,
++        "page_number": card_context.page_number,
++    }
++    return render(request, "admin_ops/partials/selected_administration_record_card.html", context)
++
++
+ @login_required
+ @require_http_methods(["GET"])
+ def user_conversations_view(request: HttpRequest, user_id: int) -> HttpResponse:
+@@ -264,12 +434,122 @@ def _handle_user_management_post(request: HttpRequest) -> HttpResponse:
+ 
+ 
+ 
++def _handle_administration_log_post(request: HttpRequest) -> HttpResponse:
++    action_name: str = str(request.POST.get("action", "")).strip()
++    administration_action_id: int | None = _parse_optional_int(request.POST.get("administration_action_id"))
++
++    if administration_action_id is None:
++        messages.error(request, "Choose a valid administration record before running an administrative action.")
++        return redirect(_build_administration_log_return_url(request))
++
++    requesting_user_id: int = int(request.user.id)
++
++    try:
++        success_message: str = perform_administration_log_action(
++            requesting_user_id=requesting_user_id,
++            administration_action_id=administration_action_id,
++            action_name=action_name,
++        )
++    except AdministrationLogPermissionError as exc:
++        messages.error(request, str(exc))
++    except AdministrationLogActionError as exc:
++        messages.error(request, str(exc))
++    except UnsupportedAdministrationLogActionError:
++        messages.error(request, "That administration-log action is not supported yet.")
++    except PermissionDenied:
++        raise
++    except Exception:
++        messages.error(request, "The administrative action could not be completed. Please review the selected administration record and try again.")
++    else:
++        messages.success(request, success_message)
++
++    return redirect(_build_administration_log_return_url(request, selected_action_id=administration_action_id))
++
++
++def _handle_moderation_log_post(request: HttpRequest) -> HttpResponse:
++    action_name: str = str(request.POST.get("action", "")).strip()
++    moderation_action_id: int | None = _parse_optional_int(request.POST.get("moderation_action_id"))
++
++    if moderation_action_id is None:
++        messages.error(request, "Choose a valid moderation record before running an administrative action.")
++        return redirect(_build_moderation_log_return_url(request))
++
++    requesting_user_id: int = int(request.user.id)
++
++    try:
++        success_message: str = perform_moderation_log_action(
++            requesting_user_id=requesting_user_id,
++            moderation_action_id=moderation_action_id,
++            action_name=action_name,
++        )
++    except ModerationLogPermissionError as exc:
++        messages.error(request, str(exc))
++    except ModerationLogActionError as exc:
++        messages.error(request, str(exc))
++    except UnsupportedModerationLogActionError:
++        messages.error(request, "That moderation-log action is not supported yet.")
++    except PermissionDenied:
++        raise
++    except Exception:
++        messages.error(request, "The administrative action could not be completed. Please review the selected moderation record and try again.")
++    else:
++        messages.success(request, success_message)
++
++    return redirect(_build_moderation_log_return_url(request, selected_action_id=moderation_action_id))
++
++
+ def _enforce_administrator_access(request: HttpRequest) -> None:
+     if not is_user_administrator(request.user):
+         raise PermissionDenied
+ 
+ 
+ 
++def _build_administration_log_return_url(request: HttpRequest, selected_action_id: int | None = None) -> str:
++    query_items: list[tuple[str, str]] = []
++    for key in ("search_email", "administration_action_type", "target_type", "sort_by", "page"):
++        value: str = str(request.POST.get(key, "")).strip()
++        if value != "":
++            query_items.append((key, value))
++
++    resolved_selected_action_id: int | None = selected_action_id
++    if resolved_selected_action_id is None:
++        resolved_selected_action_id = _parse_optional_int(request.POST.get("selected"))
++
++    if resolved_selected_action_id is not None:
++        query_items.append(("selected", str(resolved_selected_action_id)))
++
++    base_url: str = reverse("administration_log")
++    if not query_items:
++        return base_url
++
++    from urllib.parse import urlencode
++
++    return f"{base_url}?{urlencode(query_items, doseq=True)}"
++
++
++def _build_moderation_log_return_url(request: HttpRequest, selected_action_id: int | None = None) -> str:
++    query_items: list[tuple[str, str]] = []
++    for key in ("search_email", "moderation_action_type", "report_target_type", "sort_by", "page"):
++        value: str = str(request.POST.get(key, "")).strip()
++        if value != "":
++            query_items.append((key, value))
++
++    resolved_selected_action_id: int | None = selected_action_id
++    if resolved_selected_action_id is None:
++        resolved_selected_action_id = _parse_optional_int(request.POST.get("selected"))
++
++    if resolved_selected_action_id is not None:
++        query_items.append(("selected", str(resolved_selected_action_id)))
++
++    base_url: str = reverse("moderation_log")
++    if not query_items:
++        return base_url
++
++    from urllib.parse import urlencode
++
++    return f"{base_url}?{urlencode(query_items, doseq=True)}"
++
++
+ def _build_listing_management_return_url(request: HttpRequest, selected_listing_id: int | None = None) -> str:
+     query_items: list[tuple[str, str]] = []
+     for key in ("search_query", "listing_status", "category_id", "sort_by", "page"):
+diff --git a/core/context_processors.py b/core/context_processors.py
+index fef6eee..c121c7a 100644
+--- a/core/context_processors.py
++++ b/core/context_processors.py
+@@ -89,6 +89,12 @@ _SIDEBAR_ADMIN_ITEMS: tuple[dict[str, Any], ...] = (
+         "route_names": ("moderation_log",),
+         "active_route_names": ("moderation_log",),
+     },
++    {
++        "key": "administration_log",
++        "label": "Administration Log",
++        "route_names": ("administration_log",),
++        "active_route_names": ("administration_log",),
++    },
+ )
+ 
+ _ALL_SIDEBAR_ITEMS: tuple[dict[str, Any], ...] = (
+diff --git a/static/css/styles.css b/static/css/styles.css
+index 4b2946a..9228eea 100644
+--- a/static/css/styles.css
++++ b/static/css/styles.css
+@@ -1164,3 +1164,231 @@ main,
+     height: 6rem;
+   }
+ }
++
++.admin-moderation-log-page .card {
++  background-color: var(--mp-surface);
++}
++
++.admin-moderation-log-filter-card,
++.admin-moderation-log-table-card,
++.admin-selected-moderation-card {
++  border: 1px solid var(--mp-border);
++}
++
++.admin-moderation-log-filter-card,
++.admin-selected-moderation-card {
++  background: linear-gradient(180deg, #ffffff, var(--mp-surface-soft));
++}
++
++.admin-moderation-log-summary {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 0.5rem;
++}
++
++.admin-moderation-table thead th {
++  padding-top: 1rem;
++  padding-bottom: 1rem;
++  color: var(--mp-text-soft);
++  font-size: 0.8125rem;
++  font-weight: 700;
++  letter-spacing: 0.03em;
++  text-transform: uppercase;
++  border-bottom-color: var(--mp-border-strong);
++  background-color: var(--mp-surface-soft);
++}
++
++.admin-moderation-table tbody td {
++  padding-top: 1rem;
++  padding-bottom: 1rem;
++  border-bottom-color: var(--mp-border);
++}
++
++.admin-moderation-table tbody tr {
++  transition: background-color 0.15s ease, box-shadow 0.15s ease;
++}
++
++.admin-moderation-table tbody tr:hover {
++  background-color: var(--mp-surface-subtle);
++}
++
++.admin-moderation-action-chip {
++  background-color: rgba(var(--mp-primary-rgb), 0.1);
++  border-color: rgba(var(--mp-primary-rgb), 0.28);
++  color: var(--mp-deep-space);
++}
++
++.admin-moderation-target-chip {
++  background-color: rgba(var(--mp-aqua-rgb), 0.16);
++  border-color: rgba(var(--mp-aqua-rgb), 0.46);
++  color: var(--mp-deep-space);
++}
++
++.admin-moderation-note-chip {
++  background-color: rgba(var(--mp-olive-rgb), 0.16);
++  border-color: rgba(var(--mp-olive-rgb), 0.34);
++  color: var(--mp-deep-space);
++}
++
++.admin-moderation-target-name {
++  display: inline-block;
++  max-width: 18rem;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++  vertical-align: bottom;
++}
++
++.admin-selected-moderation-report-card-container {
++  position: relative;
++}
++
++.admin-selected-moderation-card .h5,
++.admin-selected-moderation-card .h4 {
++  color: var(--bs-body-color);
++}
++
++.admin-moderation-panel {
++  height: 100%;
++  padding: 1.25rem;
++  border: 1px solid var(--mp-border);
++  border-radius: 1rem;
++  background-color: rgba(255, 255, 255, 0.84);
++}
++
++.admin-moderation-preview-thumb-wrap {
++  width: 5rem;
++}
++
++.admin-moderation-preview-thumb {
++  width: 5rem;
++  height: 5rem;
++  display: block;
++  object-fit: cover;
++  border: 1px solid var(--mp-border-strong);
++  background-color: var(--mp-surface-subtle);
++}
++
++.admin-target-title {
++  display: -webkit-box;
++  -webkit-line-clamp: 2;
++  -webkit-box-orient: vertical;
++  overflow: hidden;
++}
++
++.admin-moderation-notes {
++  padding-top: 0.75rem;
++  border-top: 1px solid var(--mp-border);
++}
++
++@media (max-width: 1199.98px) {
++  .admin-moderation-actions .btn {
++    width: 100%;
++  }
++
++  .admin-moderation-actions form,
++  .admin-moderation-actions a.btn {
++    width: 100%;
++  }
++}
++
++@media (max-width: 767.98px) {
++  .admin-moderation-target-name {
++    max-width: 12rem;
++  }
++}
++
++
++.admin-administration-log-page .card {
++  background-color: var(--mp-surface);
++}
++
++.admin-administration-log-filter-card,
++.admin-administration-log-table-card,
++.admin-selected-administration-card {
++  border: 1px solid var(--mp-border);
++}
++
++.admin-administration-log-filter-card,
++.admin-selected-administration-card {
++  background: linear-gradient(180deg, #ffffff, var(--mp-surface-soft));
++}
++
++.admin-administration-log-summary {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 0.5rem;
++}
++
++.admin-administration-table thead th {
++  padding-top: 1rem;
++  padding-bottom: 1rem;
++  color: var(--mp-text-soft);
++  font-size: 0.8125rem;
++  font-weight: 700;
++  letter-spacing: 0.03em;
++  text-transform: uppercase;
++  border-bottom-color: var(--mp-border-strong);
++  background-color: var(--mp-surface-soft);
++}
++
++.admin-administration-table tbody td {
++  padding-top: 1rem;
++  padding-bottom: 1rem;
++  border-bottom-color: var(--mp-border);
++}
++
++.admin-administration-table tbody tr {
++  transition: background-color 0.15s ease, box-shadow 0.15s ease;
++}
++
++.admin-administration-table tbody tr:hover {
++  background-color: var(--mp-surface-subtle);
++}
++
++.admin-administration-action-chip {
++  background-color: rgba(var(--mp-primary-rgb), 0.1);
++  border-color: rgba(var(--mp-primary-rgb), 0.28);
++  color: var(--mp-deep-space);
++}
++
++.admin-administration-target-chip {
++  background-color: rgba(var(--mp-aqua-rgb), 0.16);
++  border-color: rgba(var(--mp-aqua-rgb), 0.46);
++  color: var(--mp-deep-space);
++}
++
++.admin-administration-target-name {
++  display: inline-block;
++  max-width: 18rem;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++  vertical-align: bottom;
++}
++
++.admin-selected-administration-record-card-container {
++  position: relative;
++}
++
++.admin-selected-administration-card .h5,
++.admin-selected-administration-card .h4 {
++  color: var(--bs-body-color);
++}
++
++@media (max-width: 1199.98px) {
++  .admin-administration-actions .btn {
++    width: 100%;
++  }
++
++  .admin-administration-actions form,
++  .admin-administration-actions a.btn {
++    width: 100%;
++  }
++}
++
++@media (max-width: 767.98px) {
++  .admin-administration-target-name {
++    max-width: 12rem;
++  }
++}
+diff --git a/staticfiles/css/styles.css b/staticfiles/css/styles.css
+index 4b2946a..9f5a649 100644
+--- a/staticfiles/css/styles.css
++++ b/staticfiles/css/styles.css
+@@ -1164,3 +1164,136 @@ main,
+     height: 6rem;
+   }
+ }
++
++.admin-moderation-log-page .card {
++  background-color: var(--mp-surface);
++}
++
++.admin-moderation-log-filter-card,
++.admin-moderation-log-table-card,
++.admin-selected-moderation-card {
++  border: 1px solid var(--mp-border);
++}
++
++.admin-moderation-log-filter-card,
++.admin-selected-moderation-card {
++  background: linear-gradient(180deg, #ffffff, var(--mp-surface-soft));
++}
++
++.admin-moderation-log-summary {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 0.5rem;
++}
++
++.admin-moderation-table thead th {
++  padding-top: 1rem;
++  padding-bottom: 1rem;
++  color: var(--mp-text-soft);
++  font-size: 0.8125rem;
++  font-weight: 700;
++  letter-spacing: 0.03em;
++  text-transform: uppercase;
++  border-bottom-color: var(--mp-border-strong);
++  background-color: var(--mp-surface-soft);
++}
++
++.admin-moderation-table tbody td {
++  padding-top: 1rem;
++  padding-bottom: 1rem;
++  border-bottom-color: var(--mp-border);
++}
++
++.admin-moderation-table tbody tr {
++  transition: background-color 0.15s ease, box-shadow 0.15s ease;
++}
++
++.admin-moderation-table tbody tr:hover {
++  background-color: var(--mp-surface-subtle);
++}
++
++.admin-moderation-action-chip {
++  background-color: rgba(var(--mp-primary-rgb), 0.1);
++  border-color: rgba(var(--mp-primary-rgb), 0.28);
++  color: var(--mp-deep-space);
++}
++
++.admin-moderation-target-chip {
++  background-color: rgba(var(--mp-aqua-rgb), 0.16);
++  border-color: rgba(var(--mp-aqua-rgb), 0.46);
++  color: var(--mp-deep-space);
++}
++
++.admin-moderation-note-chip {
++  background-color: rgba(var(--mp-olive-rgb), 0.16);
++  border-color: rgba(var(--mp-olive-rgb), 0.34);
++  color: var(--mp-deep-space);
++}
++
++.admin-moderation-target-name {
++  display: inline-block;
++  max-width: 18rem;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++  vertical-align: bottom;
++}
++
++.admin-selected-moderation-report-card-container {
++  position: relative;
++}
++
++.admin-selected-moderation-card .h5,
++.admin-selected-moderation-card .h4 {
++  color: var(--bs-body-color);
++}
++
++.admin-moderation-panel {
++  height: 100%;
++  padding: 1.25rem;
++  border: 1px solid var(--mp-border);
++  border-radius: 1rem;
++  background-color: rgba(255, 255, 255, 0.84);
++}
++
++.admin-moderation-preview-thumb-wrap {
++  width: 5rem;
++}
++
++.admin-moderation-preview-thumb {
++  width: 5rem;
++  height: 5rem;
++  display: block;
++  object-fit: cover;
++  border: 1px solid var(--mp-border-strong);
++  background-color: var(--mp-surface-subtle);
++}
++
++.admin-target-title {
++  display: -webkit-box;
++  -webkit-line-clamp: 2;
++  -webkit-box-orient: vertical;
++  overflow: hidden;
++}
++
++.admin-moderation-notes {
++  padding-top: 0.75rem;
++  border-top: 1px solid var(--mp-border);
++}
++
++@media (max-width: 1199.98px) {
++  .admin-moderation-actions .btn {
++    width: 100%;
++  }
++
++  .admin-moderation-actions form,
++  .admin-moderation-actions a.btn {
++    width: 100%;
++  }
++}
++
++@media (max-width: 767.98px) {
++  .admin-moderation-target-name {
++    max-width: 12rem;
++  }
++}

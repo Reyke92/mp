@@ -36,6 +36,7 @@ from admin_ops.utils.roles import ADMINISTRATOR_ROLE_NAME, MODERATOR_ROLE_NAME, 
 
 PAGE_SIZE: int = 20
 BAN_USER_ACTION_TYPE_NAME: str = "BanUser"
+UNBAN_USER_ACTION_TYPE_NAME: str = "UnbanUser"
 USER_EMAIL_SOURCE_FIELD_NAME: str = "username"
 
 
@@ -674,9 +675,9 @@ def _log_account_status_change(
     target_user_id: int,
     is_active: bool,
 ) -> AdministrationAction:
-    action_type: AdministrationActionType
-    action_type, _created = AdministrationActionType.objects.get_or_create(
-        action_type_name=BAN_USER_ACTION_TYPE_NAME,
+    action_type_name: str = UNBAN_USER_ACTION_TYPE_NAME if is_active else BAN_USER_ACTION_TYPE_NAME
+    action_type: AdministrationActionType = AdministrationActionType.objects.get(
+        action_type_name__iexact=action_type_name,
     )
     state_label: str = "Account status changed to Active." if is_active else "Account status changed to Banned."
     return AdministrationAction.objects.create(
