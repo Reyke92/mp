@@ -1,0 +1,20 @@
+{% extends "sidebar_content_view.html" %}
+
+{% block page_content %}
+<div class="container-fluid px-0">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Messages</h1>
+        <p class="text-body-secondary mb-0">Your Conversations</p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            {% for conversation in conversations %}
+                <div>Conversation #{{ conversation.pk}}</div>
+            {% empty %}
+                <p class="text-body-secondary mb-0">Empty</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
