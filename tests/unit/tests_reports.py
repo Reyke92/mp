@@ -126,6 +126,30 @@ class ReportSubmissionIntegrationTests(ReportWorkflowTestCase): #tests TC-REP-00
         self.assertEqual(report.details, "This conversation includes abusive content.")
         self.assertEqual(report.status, self.received_status)
 
+    def test_non_participant_cannot_open_report_form_for_conversation(self) -> None:
+        self.client.force_login(self.seller)
+
+        response = self.client.get(
+            reverse("report"),
+            {"conversation_id": self.conversation.conversation_id},
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_non_participant_cannot_submit_report_for_conversation(self) -> None:
+        self.client.force_login(self.seller)
+
+        response = self.client.post(
+            reverse("report"),
+            {
+                "conversation_id": self.conversation.conversation_id,
+                "reason": "I should not be allowed to report this conversation.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(Report.objects.count(), 0)
+
 
 class ReportTargetValidationTests(ReportWorkflowTestCase): #tests TC-REP-002 
     def test_report_form_rejects_submission_with_both_targets(self) -> None:

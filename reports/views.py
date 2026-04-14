@@ -1,5 +1,4 @@
-from django.shortcuts import render
-
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
@@ -22,7 +21,11 @@ def report_view(request):
         listing = get_object_or_404(Listing, pk=listing_id)
 
     if conversation_id:
-        conversation = get_object_or_404(Conversation, pk=conversation_id)
+        conversation = get_object_or_404(
+            Conversation,
+            Q(pk=conversation_id),
+            (Q(user_a=request.user) | Q(user_b=request.user)),
+        )
 
     if request.method == "POST":
         form = ReportForm(request.POST, listing=listing, conversation=conversation)
