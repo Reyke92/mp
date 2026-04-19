@@ -60,10 +60,10 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: "3.14"
           cache: "pip"
@@ -72,7 +72,7 @@ jobs:
       - name: Install OS dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-dev default-libmysqlclient-dev build-essential pkg-config
+          sudo apt-get install -y python3-dev default-libmysqlclient-dev build-essential pkg-config default-mysql-client
 
       - name: Install Python dependencies
         run: |
@@ -83,26 +83,7 @@ jobs:
         shell: bash
         run: |
           for i in {1..30}; do
-            if python - <<'PY'
-import os
-import socket
-import sys
-
-host = os.environ["DB_HOST"]
-port = int(os.environ["DB_PORT"])
-
-sock = socket.socket()
-sock.settimeout(2)
-
-try:
-    sock.connect((host, port))
-except OSError:
-    sys.exit(1)
-else:
-    sock.close()
-    sys.exit(0)
-PY
-            then
+            if mysqladmin ping -h 127.0.0.1 -uroot -prootpasswd --silent; then
               echo "MySQL is reachable."
               exit 0
             fi
