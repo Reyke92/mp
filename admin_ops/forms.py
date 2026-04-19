@@ -8,6 +8,58 @@ from crispy_forms.helper import FormHelper
 from catalog.models import Category
 
 
+DASHBOARD_DEFAULT_RANGE_WEEKS: int = 12
+
+
+class AdminDashboardDateRangeForm(forms.Form):
+    start_date: forms.DateField = forms.DateField(
+        label="Start date",
+        required=True,
+        widget=forms.DateInput(
+            attrs={
+                "class": "form-control",
+                "type": "date",
+            }
+        ),
+    )
+    end_date: forms.DateField = forms.DateField(
+        label="End date",
+        required=True,
+        widget=forms.DateInput(
+            attrs={
+                "class": "form-control",
+                "type": "date",
+            }
+        ),
+    )
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        from admin_ops.utils.dashboard_analytics import (
+            get_default_dashboard_end_date,
+            get_default_dashboard_start_date,
+        )
+
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper(self)
+        self.helper.form_method = "get"
+        self.helper.form_tag = False
+
+        if not self.is_bound:
+            self.initial.setdefault("start_date", get_default_dashboard_start_date())
+            self.initial.setdefault("end_date", get_default_dashboard_end_date())
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data: dict[str, Any] = super().clean()
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+
+        if start_date is not None and end_date is not None and end_date < start_date:
+            raise forms.ValidationError("The end date must be on or after the start date.")
+
+        return cleaned_data
+
+
 USER_STATUS_ALL_VALUE: str = ""
 USER_STATUS_ACTIVE_VALUE: str = "active"
 USER_STATUS_BANNED_VALUE: str = "banned"

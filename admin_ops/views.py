@@ -10,7 +10,9 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from admin_ops.forms import AdministrationLogFilterForm, ListingManagementFilterForm, ModerationLogFilterForm, UserManagementFilterForm
+from admin_ops.forms import AdminDashboardDateRangeForm, AdministrationLogFilterForm, ListingManagementFilterForm, ModerationLogFilterForm, UserManagementFilterForm
+from admin_ops.utils.dashboard_analytics import build_admin_dashboard_page_context, get_default_dashboard_end_date, get_default_dashboard_start_date
+from admin_ops.utils.reports_hub import build_reports_hub_cards
 from admin_ops.utils.roles import is_user_administrator
 from admin_ops.utils.administration_log import (
     AdministrationLogActionError,
@@ -44,6 +46,46 @@ from admin_ops.utils.user_management import (
     build_user_management_page_context,
     perform_user_management_action,
 )
+
+
+
+
+@login_required
+@require_http_methods(["GET"])
+def admin_reports_hub_view(request: HttpRequest) -> HttpResponse:
+    _enforce_administrator_access(request)
+
+    context: dict[str, Any] = {
+        "report_cards": build_reports_hub_cards(),
+    }
+    return render(request, "admin_ops/reports_hub.html", context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def admin_dashboard_view(request: HttpRequest) -> HttpResponse:
+    _enforce_administrator_access(request)
+
+    filter_form: AdminDashboardDateRangeForm = AdminDashboardDateRangeForm(request.GET or None)
+    if filter_form.is_valid():
+        cleaned_data: dict[str, Any] = filter_form.cleaned_data
+        start_date = cleaned_data["start_date"]
+        end_date = cleaned_data["end_date"]
+    else:
+        start_date = get_default_dashboard_start_date()
+        end_date = get_default_dashboard_end_date()
+        filter_form = AdminDashboardDateRangeForm(initial={"start_date": start_date, "end_date": end_date})
+
+    page_context = build_admin_dashboard_page_context(start_date=start_date, end_date=end_date)
+
+    context: dict[str, Any] = {
+        "filter_form": filter_form,
+        "summary_metrics": page_context.summary_metrics,
+        "trend_cards": page_context.trend_cards,
+        "trend_range_label": page_context.trend_range_label,
+        "total_weeks_in_range": page_context.total_weeks_in_range,
+    }
+    return render(request, "admin_ops/admin_dashboard.html", context)
 
 
 @login_required
