@@ -27,6 +27,7 @@ urlpatterns = [
     path("", include("accounts.urls")),
     path("", include("search.urls")),
     path("", include("listings.urls")),
+    path("", include("reports.urls")),
     path("", include("admin_ops.urls")),
 ]
 
