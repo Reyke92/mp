@@ -37,25 +37,51 @@ class MarketplaceTestCase(TestCase):
     password: str = "password123"
 
     def create_basic_listing_world(self) -> BasicListingWorld:
-        state: State = State.objects.create(state_code="KY", state_name="Kentucky")
-        timezone: Timezone = Timezone.objects.create(timezone_name="UTC-5")
-        city: City = City.objects.create(
+        state, _ = State.objects.get_or_create(
+            state_code="KY",
+            defaults={"state_name": "Kentucky"},
+        )
+        timezone, _ = Timezone.objects.get_or_create(
+            timezone_name="UTC-5",
+        )
+        city, _ = City.objects.get_or_create(
             state=state,
             city_name="Bowling Green",
-            timezone=timezone,
-            latitude="36.968521",
-            longitude="-86.480804",
+            defaults={
+                "timezone": timezone,
+                "latitude": "36.968521",
+                "longitude": "-86.480804",
+            },
         )
-        parent_category: Category = Category.objects.create(name="Electronics", slug="electronics")
-        child_category: Category = Category.objects.create(
-            parent_category=parent_category,
-            name="Laptops",
+
+        parent_category, _ = Category.objects.get_or_create(
+            slug="electronics",
+            defaults={
+                "name": "Electronics",
+                "parent_category": None,
+            },
+        )
+        child_category, _ = Category.objects.get_or_create(
             slug="laptops",
+            defaults={
+                "parent_category": parent_category,
+                "name": "Laptops",
+            },
         )
-        condition: ItemCondition = ItemCondition.objects.create(condition_name="Used")
-        active_status: ListingStatus = ListingStatus.objects.create(status_name="Active")
-        frozen_status: ListingStatus = ListingStatus.objects.create(status_name="Frozen")
-        deleted_status: ListingStatus = ListingStatus.objects.create(status_name="Deleted")
+
+        condition, _ = ItemCondition.objects.get_or_create(
+            condition_name="Used",
+        )
+        active_status, _ = ListingStatus.objects.get_or_create(
+            status_name="Active",
+        )
+        frozen_status, _ = ListingStatus.objects.get_or_create(
+            status_name="Frozen",
+        )
+        deleted_status, _ = ListingStatus.objects.get_or_create(
+            status_name="Deleted",
+        )
+
         return BasicListingWorld(
             state=state,
             timezone=timezone,
@@ -86,14 +112,41 @@ class MarketplaceTestCase(TestCase):
             last_name=last_name,
             is_active=is_active,
         )
+
         if with_profile:
             resolved_city: City = city if city is not None else self.create_basic_listing_world().city
-            UserProfile.objects.create(user=user, city=resolved_city, bio="")
+
+            # Attach a tiny avatar file so templates that use profile.avatar.url
+            # do not fail during rendering.
+            avatar_file = SimpleUploadedFile(
+                name="avatar.jpg",
+                content=b"test-avatar-bytes",
+                content_type="image/jpeg",
+            )
+
+            UserProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    "city": resolved_city,
+                    "bio": "",
+                    "avatar": avatar_file,
+                },
+            )
+
         return user
 
     def assign_role(self, *, user: Any, role_name: str) -> UserRoleAssignment:
-        role: Role = Role.objects.create(role_name=role_name)
-        return UserRoleAssignment.objects.create(user=user, role=role)
+        # Roles are shared enum-like rows and must be reused.
+        role, _ = Role.objects.get_or_create(role_name=role_name)
+
+        # Keep a single privileged role assignment per user in tests.
+        UserRoleAssignment.objects.filter(user=user).exclude(role=role).delete()
+
+        assignment, _ = UserRoleAssignment.objects.get_or_create(
+            user=user,
+            role=role,
+        )
+        return assignment
 
     def seed_admin_action_types(self) -> dict[str, AdministrationActionType]:
         names: tuple[str, ...] = (
@@ -104,24 +157,33 @@ class MarketplaceTestCase(TestCase):
             "FreezeListing",
             "UnfreezeListing",
         )
-        return {
-            name: AdministrationActionType.objects.create(action_type_name=name)
-            for name in names
-        }
+        seeded: dict[str, AdministrationActionType] = {}
+        for name in names:
+            action_type, _ = AdministrationActionType.objects.get_or_create(
+                action_type_name=name,
+            )
+            seeded[name] = action_type
+        return seeded
 
     def seed_moderation_action_types(self) -> dict[str, ModerationActionType]:
         names: tuple[str, ...] = ("BanUser", "FreezeListing")
-        return {
-            name: ModerationActionType.objects.create(action_type_name=name)
-            for name in names
-        }
+        seeded: dict[str, ModerationActionType] = {}
+        for name in names:
+            action_type, _ = ModerationActionType.objects.get_or_create(
+                action_type_name=name,
+            )
+            seeded[name] = action_type
+        return seeded
 
     def seed_report_statuses(self) -> dict[str, ReportStatus]:
         names: tuple[str, ...] = ("Received", "Resolved")
-        return {
-            name: ReportStatus.objects.create(status_name=name)
-            for name in names
-        }
+        seeded: dict[str, ReportStatus] = {}
+        for name in names:
+            status, _ = ReportStatus.objects.get_or_create(
+                status_name=name,
+            )
+            seeded[name] = status
+        return seeded
 
     def create_listing(
         self,
@@ -146,7 +208,13 @@ class MarketplaceTestCase(TestCase):
             view_count=view_count,
         )
 
-    def create_listing_image(self, *, listing: Listing, display_order: int = 0, file_name: str = "listing.jpg") -> ListingImage:
+    def create_listing_image(
+        self,
+        *,
+        listing: Listing,
+        display_order: int = 0,
+        file_name: str = "listing.jpg",
+    ) -> ListingImage:
         return ListingImage.objects.create(
             listing=listing,
             image_url=file_name,
@@ -154,31 +222,39 @@ class MarketplaceTestCase(TestCase):
         )
 
     def create_attribute_schema(self, *, category: Category) -> tuple[Attribute, AttributeValueType]:
-        value_type: AttributeValueType = AttributeValueType.objects.create(value_type_name="text")
-        attribute: Attribute = Attribute.objects.create(
+        value_type, _ = AttributeValueType.objects.get_or_create(
+            value_type_name="text",
+        )
+        attribute, _ = Attribute.objects.get_or_create(
             category=category,
             attribute_key="brand",
-            value_type=value_type,
+            defaults={"value_type": value_type},
         )
-        AllowedAttributeValue.objects.create(attribute=attribute, allowed_value_label="Lenovo")
+        AllowedAttributeValue.objects.get_or_create(
+            attribute=attribute,
+            allowed_value_label="Lenovo",
+        )
         return attribute, value_type
 
     def create_snapshot(self, *, listing: Listing) -> ListingMetadataSnapshot:
-        return ListingMetadataSnapshot.objects.create(
+        snapshot, _ = ListingMetadataSnapshot.objects.update_or_create(
             listing=listing,
-            compiled_json={
-                "Title": listing.title,
-                "CityName": listing.city.city_name,
-                "Condition": listing.condition.condition_name,
-                "CreatedAt": "2026-01-01T00:00:00",
-                "StateCode": listing.city.state.state_code,
-                "UpdatedAt": None,
-                "Attributes": {},
-                "Image": None,
-                "PriceAmount": float(listing.price_amount),
-                "CategoryName": listing.category.name,
+            defaults={
+                "compiled_json": {
+                    "Title": listing.title,
+                    "CityName": listing.city.city_name,
+                    "Condition": listing.condition.condition_name,
+                    "CreatedAt": "2026-01-01T00:00:00",
+                    "StateCode": listing.city.state.state_code,
+                    "UpdatedAt": None,
+                    "Attributes": {},
+                    "Image": None,
+                    "PriceAmount": float(listing.price_amount),
+                    "CategoryName": listing.category.name,
+                },
             },
         )
+        return snapshot
 
     def create_moderation_report_for_listing(
         self,
@@ -188,8 +264,13 @@ class MarketplaceTestCase(TestCase):
         listing: Listing,
         note: str = "Reviewed.",
     ) -> tuple[ModerationAction, Report]:
-        action_type: ModerationActionType = ModerationActionType.objects.create(action_type_name="FreezeListing")
-        report_status: ReportStatus = ReportStatus.objects.create(status_name="Received")
+        action_type, _ = ModerationActionType.objects.get_or_create(
+            action_type_name="FreezeListing",
+        )
+        report_status, _ = ReportStatus.objects.get_or_create(
+            status_name="Received",
+        )
+
         action: ModerationAction = ModerationAction.objects.create(
             actor_user=actor_user,
             action_type=action_type,
