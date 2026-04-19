@@ -1,0 +1,166 @@
+{% extends 'sidebar_content_view.html' %}
+{% load static %}
+
+{% block page_content %}
+<div class="container-fluid admin-administration-log-page px-0">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Administration Log</h1>
+        <p class="text-body-secondary mb-0">
+            Review recorded administrator actions, narrow the audit trail with filters, and take follow-up actions without leaving the page.
+        </p>
+    </div>
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'success' %}alert-success{% else %}alert-primary{% endif %} admin-user-management-alert mb-2" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm border-0 admin-administration-log-filter-card mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
+                <div>
+                    <h2 class="h4 mb-1">Search and filters</h2>
+                    <p class="text-body-secondary mb-0">Search by actor or target email, then refine the administration history with focused filters.</p>
+                </div>
+                <div class="admin-administration-log-summary text-body-secondary small">
+                    {% for part in filter_summary_parts %}
+                    <span class="marketplace-chip admin-summary-chip">{{ part }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-lg-4">
+                    <label class="form-label" for="id_search_email">{{ filter_form.search_email.label }}</label>
+                    {{ filter_form.search_email }}
+                </div>
+                <div class="col-12 col-md-4 col-lg-3">
+                    <label class="form-label" for="id_administration_action_type">{{ filter_form.administration_action_type.label }}</label>
+                    {{ filter_form.administration_action_type }}
+                </div>
+                <div class="col-12 col-md-4 col-lg-2">
+                    <label class="form-label" for="id_target_type">{{ filter_form.target_type.label }}</label>
+                    {{ filter_form.target_type }}
+                </div>
+                <div class="col-12 col-md-4 col-lg-2">
+                    <label class="form-label" for="id_sort_by">{{ filter_form.sort_by.label }}</label>
+                    {{ filter_form.sort_by }}
+                </div>
+                <div class="col-12 col-lg-1">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" type="submit">Apply</button>
+                        <a class="btn btn-outline-secondary" href="{% url 'administration_log' %}">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 admin-administration-log-table-card mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 admin-user-table admin-administration-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Actor</th>
+                            <th scope="col">Action Taken</th>
+                            <th scope="col">Target Name</th>
+                            <th scope="col">Recorded</th>
+                            <th scope="col" class="text-end pe-4">Select</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if table_rows %}
+                            {% for row in table_rows %}
+                            <tr data-action-id="{{ row.action_id }}" class="{% if row.is_selected %}admin-user-table-row-selected{% endif %}">
+                                <td>
+                                    <a class="fw-semibold text-decoration-none d-inline-block" href="{{ row.actor_profile_url }}">{{ row.actor_display_name }}</a>
+                                </td>
+                                <td>
+                                    <span class="marketplace-chip admin-administration-action-chip">{{ row.action_label }}</span>
+                                </td>
+                                <td>
+                                    <div class="admin-administration-target-name" title="{{ row.target_display_name }}">{{ row.target_display_name }}</div>
+                                    <div class="mt-2">
+                                        <span class="marketplace-chip admin-administration-target-chip">{{ row.target_type_label }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ row.recorded_at|date:"m/d/Y g:i A" }}</td>
+                                <td class="text-end pe-4">
+                                    <a
+                                        class="btn admin-select-administration-action-button {% if row.is_selected %}btn-primary disabled{% else %}btn-outline-primary{% endif %}"
+                                        href="{{ row.select_url }}"
+                                        data-action-id="{{ row.action_id }}"
+                                        data-selected-card-url="{{ row.selected_card_url }}"
+                                        data-select-label="Select"
+                                        data-selected-label="Selected"
+                                        {% if row.is_selected %}aria-disabled="true" tabindex="-1"{% endif %}
+                                    >
+                                        {% if row.is_selected %}Selected{% else %}Select{% endif %}
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="px-3">
+                                        <h2 class="h5 mb-2">No administration records matched the current search.</h2>
+                                        <p class="text-body-secondary mb-0">Try broadening the filters or clearing the search terms to view more recorded administrator activity.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="card-footer bg-transparent border-0 pt-3 pb-4">
+            <nav aria-label="Administration log pagination">
+                <ul class="pagination justify-content-center mb-0 flex-wrap gap-2">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    {% for page_number in page_range %}
+                        {% if page_number == '…' %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% elif page_number == page_obj.number %}
+                        <li class="page-item active" aria-current="page"><span class="page-link">{{ page_number }}</span></li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_number }}">{{ page_number }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="admin-selected-administration-record-card-container" class="admin-selected-administration-record-card-container" aria-live="polite" aria-busy="false">
+        {% include "admin_ops/partials/selected_administration_record_card.html" with selected_record=selected_record preserved_query_items=preserved_query_items page_number=current_page_number %}
+    </div>
+</div>
+
+<script src="{% static 'js/admin_administration_log.js' %}"></script>
+{% endblock %}

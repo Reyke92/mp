@@ -28,6 +28,7 @@ urlpatterns = [
     path("", include("search.urls")),
     path("", include("listings.urls")),
     path("", include("reports.urls")),
+    path("", include("admin_ops.urls")),
 ]
 
 if settings.DEBUG or getattr(settings, "SERVE_FILES_THROUGH_DJANGO", False):
