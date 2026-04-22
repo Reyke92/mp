@@ -1,14 +1,15 @@
-from accounts.models import UserProfile
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
-from messaging.models import Conversation
+from django.http import Http404, HttpRequest
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.http import require_POST
+from listings.utils import can_view_listing, get_listing_by_id_or_404
+from messaging.models import Conversation, Message
 from typing import Any
 
 @login_required
-def inbox_view(request: HttpRequest) -> HttpResponse:
+def inbox_view(request: HttpRequest):
     conversations = Conversation.objects.filter(Q(user_a=request.user) | Q(user_b=request.user)).order_by('-created_at')
     
     context: dict[str, Any] = {
@@ -16,3 +17,42 @@ def inbox_view(request: HttpRequest) -> HttpResponse:
         "active_sidebar_item": "messages",
     }
     return render(request, "messaging/inbox.html", context)
+
+@login_required
+@require_POST
+def start_conversation_view(request: HttpRequest):
+    listing_id = request.POST.get("listing_id")
+    if(listing_id is None):
+        raise Http404("Listing not found.")
+    listing = get_listing_by_id_or_404(int(listing_id))
+    
+    if (not can_view_listing(listing=listing, viewer=request.user)):
+        raise PermissionDenied("You do not have permission to view this listing.")
+    
+    if listing.seller_user == request.user:
+        raise PermissionDenied("You cannot start a conversation with yourself.")
+
+    user_a, user_b = Conversation.standard_pair(request.user, listing.seller_user)
+    conversation, _created = Conversation.objects.get_or_create(user_a=user_a, user_b=user_b)
+
+    
+    return redirect("messaging:conversation", conversation_id=conversation.conversation_id)
+
+@login_required
+def conversation_view(request: HttpRequest, conversation_id: int):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+
+    if (request.user != conversation.user_a and request.user != conversation.user_b):
+        raise PermissionDenied("You do not have permission to view this conversation.")
+    
+    other_user = conversation.user_b if conversation.user_a == request.user else conversation.user_a
+
+    thread_messages = Message.objects.filter(conversation=conversation).order_by('sent_at')
+
+    context: dict[str, Any] = {
+        "conversation": conversation,
+        "other_user": other_user,
+        "thread_messages": thread_messages,
+        "active_sidebar_item": "messages",
+    }
+    return render(request, "messaging/conversation.html", context)
