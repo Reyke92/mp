@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q
-from django.http import Http404, HttpRequest
+from django.http import Http404, HttpRequest, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 from listings.utils import can_view_listing, get_listing_by_id_or_404
 from messaging.models import Conversation, Message
@@ -78,3 +79,30 @@ def send_message_view(request: HttpRequest, conversation_id: int):
     )
     
     return redirect("messaging:conversation", conversation_id=conversation.conversation_id)
+
+@login_required
+def conversation_messages_json(request: HttpRequest, conversation_id: int):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+
+    if (request.user != conversation.user_a and request.user != conversation.user_b):
+        return JsonResponse({"error": "Forbidden"}, status=403)
+    
+    after = request.GET.get("after", "")
+    messages_qs = Message.objects.filter(conversation=conversation).order_by('sent_at')
+
+    if after:
+        after_dt = parse_datetime(after)
+        if after_dt is not None:
+            messages_qs = messages_qs.filter(sent_at__gt=after_dt)
+
+    messages_data = []
+    for msg in messages_qs:
+        messages_data.append({
+            "sender_user": msg.sender_user_id,  # type: ignore[attr-defined]
+            "message_text": msg.message_text,
+            "sent_at": msg.sent_at.strftime("%b %d, %Y, %I:%M %p"),
+            "sent_at_iso": msg.sent_at.isoformat(),
+            "is_mine": msg.sender_user_id == request.user.id,   # type: ignore[attr-defined]
+        })  
+
+    return JsonResponse({"messages": messages_data})
