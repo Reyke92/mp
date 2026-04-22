@@ -9,8 +9,23 @@
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-4">
-            {% for conversation in conversations %}
-                <div>Conversation #{{ conversation.pk}}</div>
+            {% for conversation in rows %}
+                <a href="{% url 'messaging:conversation' conversation_id=conversation.conversation_id %}"
+                class="d-flex justify-content-between align-items-center text-decoration-none text-body p-3 rounded-3 mb-2 border">
+                    <div>
+                        <h3 class="h6 mb-0">
+                            {% if conversation.user_a == request.user %}
+                                {{ conversation.user_b.get_full_name|default:conversation.user_b.username }}
+                            {% else %}
+                                {{ conversation.user_a.get_full_name|default:conversation.user_a.username }}
+                            {% endif %}
+                        </h3>
+                        <small class="text-body-secondary">
+                            Started {{ conversation.created_at|date:"M j, Y g:i A" }}
+                        </small>
+                    </div>
+                    <span class="text-body-secondary">&rsaquo;</span>
+                </a>
             {% empty %}
                 <p class="text-body-secondary mb-0">Empty</p>
             {% endfor %}

@@ -10,7 +10,9 @@ from typing import Any
 
 @login_required
 def inbox_view(request: HttpRequest):
-    conversations = Conversation.objects.filter(Q(user_a=request.user) | Q(user_b=request.user)).order_by('-created_at')
+    conversations = Conversation.objects.filter(
+        Q(user_a=request.user) | Q(user_b=request.user)
+    ).select_related('user_a', 'user_b').order_by('-created_at')
     
     context: dict[str, Any] = {
         "rows": conversations,
@@ -56,3 +58,23 @@ def conversation_view(request: HttpRequest, conversation_id: int):
         "active_sidebar_item": "messages",
     }
     return render(request, "messaging/conversation.html", context)
+
+@login_required
+@require_POST
+def send_message_view(request: HttpRequest, conversation_id: int):
+    conversation = get_object_or_404(Conversation, pk=conversation_id)
+
+    if (request.user != conversation.user_a and request.user != conversation.user_b):
+        raise PermissionDenied("You do not have permission to view this conversation.")
+    
+    content = request.POST.get("message_text", "").strip()
+    if len(content) == 0:
+        return redirect("messaging:conversation", conversation_id=conversation.conversation_id)
+
+    Message.objects.create(
+        conversation=conversation,
+        sender_user=request.user,
+        message_text=content,
+    )
+    
+    return redirect("messaging:conversation", conversation_id=conversation.conversation_id)
