@@ -3,6 +3,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("admin/dashboard/", views.admin_dashboard_view, name="admin_dashboard"),
+    path("admin/reports_hub/", views.admin_reports_hub_view, name="admin_reports_hub"),
     path(
         "admin/administration_log/selected-card/<int:action_id>/",
         views.administration_log_selected_card_view,

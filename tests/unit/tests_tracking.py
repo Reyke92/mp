@@ -1,53 +1,20 @@
 from __future__ import annotations
 
-from django.contrib.auth import get_user_model
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory
 
-from admin_ops.models import Role, UserRoleAssignment
-from catalog.models import Category, ItemCondition
-from core.models import City, State, Timezone
-from listings.models import Listing, ListingStatus
 from tracking.services import record_view
+from tests.common import MarketplaceTestCase
 
 
-User = get_user_model()
-
-
-class ListingViewCountTrackingTests(TestCase):
+class ListingViewCountTrackingTests(MarketplaceTestCase):
     def setUp(self) -> None:
         self.factory = RequestFactory()
-        self.owner = User.objects.create_user(username="owner@example.com", password="password123")
-        self.other_user = User.objects.create_user(username="other@example.com", password="password123")
-        self.administrator = User.objects.create_user(username="administrator@example.com", password="password123")
-
-        self.administrator_role = Role.objects.create(role_name="Administrator")
-        UserRoleAssignment.objects.create(user=self.administrator, role=self.administrator_role)
-
-        self.state = State.objects.create(state_code="KY", state_name="Kentucky")
-        self.timezone = Timezone.objects.create(timezone_name="UTC-5")
-        self.city = City.objects.create(
-            state=self.state,
-            city_name="Bowling Green",
-            timezone=self.timezone,
-            latitude="36.968521",
-            longitude="-86.480804",
-        )
-        self.category = Category.objects.create(name="Electronics", slug="electronics")
-        self.condition = ItemCondition.objects.create(condition_name="Used")
-        self.active_status = ListingStatus.objects.create(status_name="Active")
-
-        self.listing = Listing.objects.create(
-            seller_user=self.owner,
-            category=self.category,
-            condition=self.condition,
-            city=self.city,
-            title="Desk fan",
-            description="A small desk fan in good condition.",
-            price_amount="15.00",
-            status=self.active_status,
-            updated_at=None,
-            view_count=0,
-        )
+        self.world = self.create_basic_listing_world()
+        self.owner = self.create_user(email="owner@example.com")
+        self.other_user = self.create_user(email="other@example.com")
+        self.administrator = self.create_user(email="administrator@example.com")
+        self.assign_role(user=self.administrator, role_name="Administrator")
+        self.listing = self.create_listing(seller_user=self.owner, world=self.world, view_count=0)
 
     def test_record_view_increments_for_guest_request(self) -> None:
         request = self.factory.get(f"/listings/{int(self.listing.listing_id)}/")

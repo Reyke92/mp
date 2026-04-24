@@ -1,0 +1,63 @@
+{% extends 'sidebar_content_view.html' %}
+
+{% block page_content %}
+<div class="container-fluid admin-reports-hub-page px-0">
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Web Reports Hub</h1>
+        <p class="text-body-secondary mb-0">
+            Choose an administrator report or oversight view to open. Each option below links directly to a staff-facing summary or operational report screen.
+        </p>
+    </div>
+
+    <div class="card shadow-sm border-0 admin-reports-hub-intro-card mb-4">
+        <div class="card-body p-4 p-xl-5">
+            <div class="row g-4 align-items-center">
+                <div class="col-12 col-xl-8">
+                    <span class="marketplace-chip admin-report-hub-chip mb-3">Administrator-only report selection</span>
+                    <h2 class="h4 mb-2">Operational reports, management summaries, and enforcement history.</h2>
+                    <p class="text-body-secondary mb-0">
+                        The Reports Hub keeps the administrative reporting entry points together in one place so staff can move quickly between website analytics, management summaries, moderation workflow views, and audit logs.
+                    </p>
+                </div>
+                <div class="col-12 col-xl-4">
+                    <div class="admin-reports-hub-stat-panel">
+                        <div class="admin-reports-hub-stat-value">{{ report_cards|length }}</div>
+                        <div class="text-body-secondary mb-0">Available report destinations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section aria-labelledby="web-reports-hub-heading">
+        <div class="d-flex align-items-center justify-content-between gap-3 mb-3 flex-wrap">
+            <div>
+                <h2 id="web-reports-hub-heading" class="h4 mb-1">Available Reports</h2>
+                <p class="text-body-secondary mb-0">Select a report card to open the corresponding summary, management page, queue, or audit log.</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            {% for report in report_cards %}
+            <div class="col-12 col-md-6 col-xxl-4">
+                <a class="text-decoration-none d-block h-100" href="{{ report.url }}">
+                    <div class="card shadow-sm border-0 admin-report-link-card {{ report.accent_class }} h-100">
+                        <div class="card-body p-4 d-flex flex-column h-100">
+                            <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                                <span class="marketplace-chip admin-report-link-chip">{{ report.category_label }}</span>
+                                <span class="admin-report-link-arrow" aria-hidden="true">→</span>
+                            </div>
+                            <h3 class="h5 mb-2 text-body-emphasis">{{ report.title }}</h3>
+                            <p class="text-body-secondary mb-0 flex-grow-1">{{ report.description }}</p>
+                            <div class="admin-report-link-footer mt-4">
+                                <span class="fw-semibold">Open report</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
