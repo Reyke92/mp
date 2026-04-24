@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Q
+from django.db.models import Q, Max, Subquery, OuterRef, CharField
+from django.db.models.functions import Coalesce
 from django.http import Http404, HttpRequest, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.dateparse import parse_datetime
@@ -11,9 +12,14 @@ from typing import Any
 
 @login_required
 def inbox_view(request: HttpRequest):
+    latest_msg = Message.objects.filter(conversation=OuterRef('pk')).order_by('-sent_at')
+
     conversations = Conversation.objects.filter(
         Q(user_a=request.user) | Q(user_b=request.user)
-    ).select_related('user_a', 'user_b').order_by('-created_at')
+    ).select_related('user_a', 'user_b').annotate(
+        last_msg_at=Subquery(latest_msg.values('sent_at')[:1]),
+        last_msg_text=Subquery(latest_msg.values('message_text')[:1]),
+    ).order_by('-last_msg_at', '-created_at')
     
     context: dict[str, Any] = {
         "rows": conversations,

@@ -12,7 +12,7 @@
             {% for conversation in rows %}
                 <a href="{% url 'messaging:conversation' conversation_id=conversation.conversation_id %}"
                 class="d-flex justify-content-between align-items-center text-decoration-none text-body p-3 rounded-3 mb-2 border">
-                    <div>
+                    <div class="overflow-hidden">
                         <h3 class="h6 mb-0">
                             {% if conversation.user_a == request.user %}
                                 {{ conversation.user_b.get_full_name|default:conversation.user_b.username }}
@@ -20,11 +20,24 @@
                                 {{ conversation.user_a.get_full_name|default:conversation.user_a.username }}
                             {% endif %}
                         </h3>
-                        <small class="text-body-secondary">
-                            Started {{ conversation.created_at|date:"M j, Y g:i A" }}
-                        </small>
+                        <p class="text-body-secondary text-truncate mb-0 small">
+                            {% if conversation.last_msg_text %}
+                                {{ conversation.last_msg_text }}
+                            {% else %}
+                                No messages yet
+                            {% endif %}
+                        </p>
                     </div>
-                    <span class="text-body-secondary">&rsaquo;</span>
+                    <div class="text-end text-nowrap ms-3">
+                        <small class="text-body-secondary">
+                            {% if conversation.last_msg_at %}
+                                {{ conversation.last_msg_at|date:"M j, Y g:i A" }}
+                            {% else %}
+                                {{ conversation.created_at|date:"M j, Y g:i A" }}
+                            {% endif %}
+                        </small>
+                        <div class="text-body-secondary">&rsaquo;</div>
+                    </div>
                 </a>
             {% empty %}
                 <p class="text-body-secondary mb-0">Empty</p>
