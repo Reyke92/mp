@@ -45,7 +45,7 @@ def report_view(request):
             if listing:
                 return redirect("listing_detail", listing_id=listing.pk)
             if conversation:
-                return redirect("conversation_detail", conversation_id=conversation.pk)
+                return redirect("messaging:conversation", conversation_id=conversation.pk)
             return redirect("homepage")
     else:
         form = ReportForm(listing=listing, conversation=conversation)

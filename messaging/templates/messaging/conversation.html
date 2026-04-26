@@ -10,19 +10,50 @@
         </div>
     </div>
 
-    {% comment %}
-    {# ── Other user + report link ── #}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h5 mb-0">{{ other_user.get_full_name|default:other_user.username }}</h2>
-        <a href="{% url 'reports:report' %}?conversation_id={{ conversation.conversation_id }}"
-           class="btn btn-outline-secondary btn-sm">
+    {# ── Other user info card ── #}
+    <div class="card border mb-3">
+    <div class="card-body">
+        <div class="d-flex align-items-center gap-3">
+
+        {# Avatar #}
+        {% if other_user_profile and other_user_profile.avatar %}
+            <img src="{{ other_user_profile.avatar.url }}"
+                alt="{{ other_user.get_full_name|default:other_user.username }} avatar"
+                class="rounded-circle flex-shrink-0"
+                style="width: 64px; height: 64px; object-fit: cover;">
+        {% else %}
+            <div class="rounded-circle flex-shrink-0 bg-body-secondary d-flex align-items-center justify-content-center"
+                style="width: 64px; height: 64px;"
+                aria-hidden="true">
+            <span class="fs-4 fw-semibold text-body-secondary">
+                {{ other_user.username|slice:":1"|upper }}
+            </span>
+            </div>
+        {% endif %}
+
+        {# Name + bio #}
+        <div class="flex-grow-1 min-width-0">
+            <h2 class="h5 mb-1">{{ other_user.get_full_name|default:other_user.username }}</h2>
+            {% if other_user_profile and other_user_profile.bio %}
+            <p class="text-body-secondary mb-0 small">{{ other_user_profile.bio }}</p>
+            {% else %}
+            <p class="text-body-secondary mb-0 small fst-italic">No bio provided.</p>
+            {% endif %}
+        </div>
+
+        {# Report button #}
+        <div class="flex-shrink-0">
+            <a href="{% url 'report' %}?conversation_id={{ conversation.conversation_id }}"
+            class="btn btn-outline-secondary btn-sm">
             Submit Report
-        </a>
+            </a>
+        </div>
+        </div>
     </div>
-    {% endcomment %}
+    </div>
 
     {# ── Message history ── #}
-    <div class="card shadow-sm border-0 mb-3">
+    <div class="card border mb-3">
         <div class="card-body p-4" style="max-height: 500px; overflow-y: auto;" data-messages-container>
             {% if thread_messages %}
                 {% for msg in thread_messages %}
@@ -32,7 +63,7 @@
                             <div class="bg-primary text-white rounded-3 px-3 py-2"
                                  style="max-width: 75%;">
                                 <p class="mb-1">{{ msg.message_text }}</p>
-                                <small class="opacity-75">
+                                <small class="d-block fw-light">
                                     {{ msg.sent_at|date:"M j, Y g:i A" }}
                                 </small>
                             </div>
@@ -101,7 +132,7 @@
                     wrapper.innerHTML = `
                         <div class="bg-primary text-white rounded-3 px-3 py-2" style="max-width: 75%;">
                             <p class="mb-1">${escapeHtml(msg.message_text)}</p>
-                            <small class="opacity-75">${escapeHtml(msg.sent_at)}</small>
+                            <small class="d-block fw-light">${escapeHtml(msg.sent_at)}</small>
                         </div>`;
                 } else {
                     wrapper.classList.add('justify-content-start');

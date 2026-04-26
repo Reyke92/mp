@@ -1,3 +1,4 @@
+from accounts.models import UserProfile
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import Q, Max, Subquery, OuterRef, CharField
@@ -21,8 +22,25 @@ def inbox_view(request: HttpRequest):
         last_msg_text=Subquery(latest_msg.values('message_text')[:1]),
     ).order_by('-last_msg_at', '-created_at')
     
+    conversations_list = list(conversations)
+    other_user_ids = []
+    for c in conversations_list:
+        other_user_ids = [c.user_b.id if c.user_a == request.user else c.user_a.id]
+    profiles_by_user_id = {}
+    for p in UserProfile.objects.filter(user_id__in=other_user_ids):
+        profiles_by_user_id[p.user_id] = p  #type: ignore
+
+    rows = []
+    for c in conversations_list:
+        other_user = c.user_b if c.user_a == request.user else c.user_a
+        rows.append({
+            "conversation": c,
+            "other_user": other_user,
+            "other_user_profile": profiles_by_user_id.get(other_user.id)
+        })
+
     context: dict[str, Any] = {
-        "rows": conversations,
+        "rows": rows,
         "active_sidebar_item": "messages",
     }
     return render(request, "messaging/inbox.html", context)
@@ -55,12 +73,14 @@ def conversation_view(request: HttpRequest, conversation_id: int):
         raise PermissionDenied("You do not have permission to view this conversation.")
     
     other_user = conversation.user_b if conversation.user_a == request.user else conversation.user_a
+    other_user_profile = UserProfile.objects.select_related("city", "city__state").filter(user_id=other_user.id).first()
 
     thread_messages = Message.objects.filter(conversation=conversation).order_by('sent_at')
 
     context: dict[str, Any] = {
         "conversation": conversation,
         "other_user": other_user,
+        "other_user_profile": other_user_profile,
         "thread_messages": thread_messages,
         "active_sidebar_item": "messages",
     }
