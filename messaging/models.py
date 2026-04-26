@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.db import models
 from common.fields import UnsignedBigAutoField
+from typing import Any
 
 
 class Conversation(models.Model):
@@ -28,6 +29,11 @@ class Conversation(models.Model):
             models.Index(fields=['user_a', 'created_at'], name='idx_conv_user_a_created'),
             models.Index(fields=['user_b', 'created_at'], name='idx_conv_user_b_created'),
         ]
+
+    @staticmethod
+    def standard_pair(user_a: Any, user_b: Any):
+        a, b = sorted([user_a, user_b], key=lambda u: u.id)
+        return a, b
 
 
 class Message(models.Model):

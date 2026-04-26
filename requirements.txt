@@ -3,3 +3,4 @@ django-crispy-forms
 crispy-bootstrap5
 Pillow
 mysqlclient
+python-dotenv

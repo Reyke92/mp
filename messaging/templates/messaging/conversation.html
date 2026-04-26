@@ -1,0 +1,153 @@
+{% extends "sidebar_content_view.html" %}
+
+{% block page_content %}
+<div class="container-fluid px-0">
+
+    {# ── Header row ── #}
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h2 mb-1">Conversation</h1>
+        </div>
+    </div>
+
+    {% comment %}
+    {# ── Other user + report link ── #}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">{{ other_user.get_full_name|default:other_user.username }}</h2>
+        <a href="{% url 'reports:report' %}?conversation_id={{ conversation.conversation_id }}"
+           class="btn btn-outline-secondary btn-sm">
+            Submit Report
+        </a>
+    </div>
+    {% endcomment %}
+
+    {# ── Message history ── #}
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body p-4" style="max-height: 500px; overflow-y: auto;" data-messages-container>
+            {% if thread_messages %}
+                {% for msg in thread_messages %}
+                    {% if msg.sender_user_id == request.user.id %}
+                        {# Current user's message — right aligned #}
+                        <div class="d-flex justify-content-end mb-3" data-sent-at="{{ msg.sent_at|date:'c' }}">
+                            <div class="bg-primary text-white rounded-3 px-3 py-2"
+                                 style="max-width: 75%;">
+                                <p class="mb-1">{{ msg.message_text }}</p>
+                                <small class="opacity-75">
+                                    {{ msg.sent_at|date:"M j, Y g:i A" }}
+                                </small>
+                            </div>
+                        </div>
+                    {% else %}
+                        {# Other user's message — left aligned #}
+                        <div class="d-flex justify-content-start mb-3" data-sent-at="{{ msg.sent_at|date:'c' }}">
+                            <div class="bg-body-tertiary rounded-3 px-3 py-2"
+                                 style="max-width: 75%;">
+                                <p class="mb-1">{{ msg.message_text }}</p>
+                                <small class="text-body-secondary">
+                                    {{ msg.sent_at|date:"M j, Y g:i A" }}
+                                </small>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <p class="text-body-secondary text-center mb-0">
+                    No messages yet. Send one to start the conversation.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── Message composer ── #}
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-3">
+            <form method="post" action="{% url 'messaging:send_message' conversation_id=conversation.conversation_id %}">
+                {% csrf_token %}
+                <div class="d-flex gap-2">
+                    <input type="text"
+                           name="message_text"
+                           class="form-control"
+                           placeholder="Message text"
+                           required
+                           autocomplete="off">
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {# ── Polling for new messages ── #}
+    <script>
+        (function() {
+            const POLL_INTERVAL = 5000; // 5 seconds
+            const messagesUrl = "{% url 'messaging:conversation_messages_json' conversation_id=conversation.conversation_id %}";
+            const currentUserId = {{ request.user.id }};
+            const container = document.querySelector('[data-messages-container]');
+
+            // Track the latest message timestamp we've seen
+            let lastTimestamp = "";
+            const allMessages = container.querySelectorAll('[data-sent-at]');
+            if (allMessages.length > 0) {
+                lastTimestamp = allMessages[allMessages.length - 1].getAttribute('data-sent-at');
+            }
+
+            function createMessageBubble(msg) {
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('d-flex', 'mb-3');
+                wrapper.setAttribute('data-sent-at', msg.sent_at_iso);
+
+                if (msg.is_mine) {
+                    wrapper.classList.add('justify-content-end');
+                    wrapper.innerHTML = `
+                        <div class="bg-primary text-white rounded-3 px-3 py-2" style="max-width: 75%;">
+                            <p class="mb-1">${escapeHtml(msg.message_text)}</p>
+                            <small class="opacity-75">${escapeHtml(msg.sent_at)}</small>
+                        </div>`;
+                } else {
+                    wrapper.classList.add('justify-content-start');
+                    wrapper.innerHTML = `
+                        <div class="bg-body-tertiary rounded-3 px-3 py-2" style="max-width: 75%;">
+                            <p class="mb-1">${escapeHtml(msg.message_text)}</p>
+                            <small class="text-body-secondary">${escapeHtml(msg.sent_at)}</small>
+                        </div>`;
+                }
+                return wrapper;
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function removeEmptyState() {
+                const emptyMsg = container.querySelector('.text-center.text-body-secondary');
+                if (emptyMsg) emptyMsg.remove();
+            }
+
+            function poll() {
+                const url = lastTimestamp
+                    ? `${messagesUrl}?after=${encodeURIComponent(lastTimestamp)}`
+                    : messagesUrl;
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.messages && data.messages.length > 0) {
+                            removeEmptyState();
+                            data.messages.forEach(msg => {
+                                container.appendChild(createMessageBubble(msg));
+                                lastTimestamp = msg.sent_at_iso;
+                            });
+                            // Auto-scroll to bottom
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    })
+                    .catch(err => console.error('Poll error:', err));
+            }
+
+            setInterval(poll, POLL_INTERVAL);
+        })();
+    </script>
+</div>
+{% endblock %}

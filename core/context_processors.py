@@ -38,8 +38,8 @@ _SIDEBAR_MAIN_ITEMS: tuple[dict[str, Any], ...] = (
     {
         "key": "messages",
         "label": "Messages",
-        "route_names": ("inbox", "messages"),
-        "active_route_names": ("inbox", "messages", "message_thread"),
+        "route_names": ("messaging:inbox",),
+        "active_route_names": ("inbox", "conversation", "start"),
     },
     {
         "key": "profile",

@@ -160,6 +160,20 @@
                     </div>
                 </div>
                 {% endif %}
+
+                {% if not detail.is_owner %}
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'messaging:start' %}" class="d-grid mt-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="listing_id" value="{{ detail.listing.listing_id }}">
+                            <button type="submit" class="btn btn-primary">Message Seller</button>
+                        </form>
+                    {% else %}
+                        <button type="button" class="btn btn-primary w-100" disabled>
+                            Message Seller (Sign In Required)
+                        </button>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
