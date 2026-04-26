@@ -1,0 +1,47 @@
+{% load messaging_extras %}
+
+<a href="{% url 'messaging:conversation' conversation_id=conversation.conversation_id %}"
+   class="d-flex justify-content-between align-items-center text-decoration-none text-body p-3 rounded-3 mb-2 border">
+    <div class="d-flex align-items-center gap-3 overflow-hidden">
+        {% with profile=profiles_by_user_id|dict_get:other_user.id %}
+        {% if profile and profile.avatar %}
+            <img src="{{ profile.avatar.url }}"
+                 alt="{{ other_user.get_full_name|default:other_user.username }} avatar"
+                 class="rounded-circle flex-shrink-0"
+                 style="width: 48px; height: 48px; object-fit: cover;">
+        {% else %}
+            <div class="rounded-circle flex-shrink-0 bg-body-secondary d-flex align-items-center justify-content-center"
+                 style="width: 48px; height: 48px;"
+                 aria-hidden="true">
+                <span class="fw-semibold text-body-secondary">
+                    {{ other_user.username|slice:":1"|upper }}
+                </span>
+            </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="overflow-hidden">
+            <h3 class="h6 mb-0">
+                {{ other_user.get_full_name|default:other_user.username }}
+            </h3>
+            <p class="text-body-secondary text-truncate mb-0 small">
+                {% if conversation.last_msg_text %}
+                    {{ conversation.last_msg_text }}
+                {% else %}
+                    No messages yet
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="text-end text-nowrap ms-3">
+        <small class="text-body-secondary">
+            {% if conversation.last_msg_at %}
+                {{ conversation.last_msg_at|date:"M j, Y g:i A" }}
+            {% else %}
+                {{ conversation.created_at|date:"M j, Y g:i A" }}
+            {% endif %}
+        </small>
+        <div class="text-body-secondary">&rsaquo;</div>
+    </div>
+</a>

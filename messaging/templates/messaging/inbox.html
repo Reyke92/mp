@@ -9,52 +9,12 @@
 
     <div class="card shadow-sm border-0">
         <div class="card-body p-4">
-            {% for row in rows %}
-                <a href="{% url 'messaging:conversation' conversation_id=row.conversation.conversation_id %}"
-                class="d-flex justify-content-between align-items-center text-decoration-none text-body p-3 rounded-3 mb-2 border">
-                    <div class="d-flex align-items-center gap-3 overflow-hidden">
-                        {# Avatar #}
-                        {% if row.other_user_profile and row.other_user_profile.avatar %}
-                            <img src="{{ row.other_user_profile.avatar.url }}"
-                                alt="{{ row.other_user.get_full_name|default:row.other_user.username }} avatar"
-                                class="rounded-circle flex-shrink-0"
-                                style="width: 48px; height: 48px; object-fit: cover;">
-                        {% else %}
-                            <div class="rounded-circle flex-shrink-0 bg-body-secondary d-flex align-items-center justify-content-center"
-                                style="width: 48px; height: 48px;"
-                                aria-hidden="true">
-                                <span class="fw-semibold text-body-secondary">
-                                    {{ row.other_user.username|slice:":1"|upper }}
-                                </span>
-                            </div>
-                        {% endif %}
-
-                        {# Name + last message preview #}
-                        <div class="overflow-hidden">
-                            <h3 class="h6 mb-0">
-                                {{ row.other_user.get_full_name|default:row.other_user.username }}
-                            </h3>
-                            <p class="text-body-secondary text-truncate mb-0 small">
-                                {% if row.conversation.last_msg_text %}
-                                    {{ row.conversation.last_msg_text }}
-                                {% else %}
-                                    No messages yet
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="text-end text-nowrap ms-3">
-                        <small class="text-body-secondary">
-                            {% if row.conversation.last_msg_at %}
-                                {{ row.conversation.last_msg_at|date:"M j, Y g:i A" }}
-                            {% else %}
-                                {{ row.conversation.created_at|date:"M j, Y g:i A" }}
-                            {% endif %}
-                        </small>
-                        <div class="text-body-secondary">&rsaquo;</div>
-                    </div>
-                </a>
+            {% for conversation in rows %}
+                {% if conversation.user_a == request.user %}
+                    {% include "messaging/inbox_row.html" with other_user=conversation.user_b %}
+                {% else %}
+                    {% include "messaging/inbox_row.html" with other_user=conversation.user_a %}
+                {% endif %}
             {% empty %}
                 <p class="text-body-secondary mb-0">Empty</p>
             {% endfor %}

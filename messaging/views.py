@@ -25,22 +25,14 @@ def inbox_view(request: HttpRequest):
     conversations_list = list(conversations)
     other_user_ids = []
     for c in conversations_list:
-        other_user_ids = [c.user_b.id if c.user_a == request.user else c.user_a.id]
+        other_user_ids.append(c.user_b.id if c.user_a == request.user else c.user_a.id)
     profiles_by_user_id = {}
     for p in UserProfile.objects.filter(user_id__in=other_user_ids):
         profiles_by_user_id[p.user_id] = p  #type: ignore
 
-    rows = []
-    for c in conversations_list:
-        other_user = c.user_b if c.user_a == request.user else c.user_a
-        rows.append({
-            "conversation": c,
-            "other_user": other_user,
-            "other_user_profile": profiles_by_user_id.get(other_user.id)
-        })
-
     context: dict[str, Any] = {
-        "rows": rows,
+        "rows": conversations_list,
+        "profiles_by_user_id": profiles_by_user_id,
         "active_sidebar_item": "messages",
     }
     return render(request, "messaging/inbox.html", context)
