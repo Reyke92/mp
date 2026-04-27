@@ -6,7 +6,7 @@ These models are mapped 1:1 to existing database tables and are managed by Djang
 """
 from django.conf import settings
 from django.utils import timezone
-from django.db import models
+from django.db import models, transaction
 from common.fields import UnsignedBigAutoField
 
 
@@ -30,6 +30,32 @@ class Report(models.Model):
             models.Index(fields=['action'], name='fk_reports_action'),
             models.Index(fields=['status'], name='fk_reports_status'),
         ]
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.report_id is None:
+            with transaction.atomic():
+                self.report_id = self._allocate_next_report_id()
+                return super().save(*args, **kwargs)
+
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def _allocate_next_report_id(cls) -> int:
+        next_report_id: int = 0
+        existing_ids = cls.objects.select_for_update().order_by('report_id').values_list('report_id', flat=True)
+
+        for existing_id in existing_ids:
+            current_id = int(existing_id)
+
+            if current_id < next_report_id:
+                continue
+
+            if current_id != next_report_id:
+                break
+
+            next_report_id += 1
+
+        return next_report_id
 
 
 class ReportStatus(models.Model):

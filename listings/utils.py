@@ -12,6 +12,7 @@ from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import QuerySet
 from django.http import Http404, QueryDict
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import UserProfile
@@ -111,6 +112,8 @@ class ListingDetailContextData:
     gallery_images: list[ListingDetailImageRow]
     visibility_message: str | None
     show_view_count: bool
+    can_report_listing: bool
+    report_listing_url: str | None
 
 
 def build_create_listing_attribute_sections(form: CreateListingForm) -> list[CreateListingAttributeSection]:
@@ -282,6 +285,12 @@ def get_listing_detail_context_data(*, listing_id: int, viewer: Any) -> ListingD
     is_owner: bool = viewer_is_authenticated and viewer_id == int(listing.seller_user_id)
     is_privileged_viewer: bool = is_user_privileged(viewer)
     can_edit: bool = is_owner and is_listing_editable_by_owner(listing)
+    can_report_listing: bool = (
+        viewer_is_authenticated
+        and not is_owner
+        and bool(listing.seller_user.is_active)
+        and get_listing_status_name(listing) not in {status.lower() for status in NON_PUBLIC_STATUS_NAMES}
+    )
 
     seller_profile: UserProfile | None = _get_user_profile_or_none(listing.seller_user)
     gallery_images: list[ListingDetailImageRow] = [
@@ -316,6 +325,8 @@ def get_listing_detail_context_data(*, listing_id: int, viewer: Any) -> ListingD
         gallery_images=gallery_images,
         visibility_message=visibility_message,
         show_view_count=can_user_view_listing_view_count(listing=listing, viewer=viewer),
+        can_report_listing=can_report_listing,
+        report_listing_url=(reverse("report") + f"?listing_id={int(listing.listing_id)}") if can_report_listing else None,
     )
 
 

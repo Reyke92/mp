@@ -5,18 +5,67 @@
     <div class="mb-4">
         <h1 class="h2 mb-2">User Conversations</h1>
         <p class="text-body-secondary mb-0">
-            This administrator oversight view has been scaffolded for the messaging integration phase.
+            Read-only administrator oversight for {{ page_context.oversight_user.username }}.
         </p>
     </div>
 
-    <div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-4">
-            <h2 class="h4 mb-2">Read-only oversight view coming soon</h2>
-            <p class="text-body-secondary mb-3">
-                The selected user ID is <span class="fw-semibold text-body">{{ oversight_user_id }}</span>. The final implementation will show the user’s conversations and message history in a read-only administrator oversight workflow.
-            </p>
-            <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-primary" href="{% url 'user_management' %}">Back to User Management</a>
+            <div class="d-flex align-items-center gap-3">
+                {% if page_context.oversight_user_profile and page_context.oversight_user_profile.avatar %}
+                <img src="{{ page_context.oversight_user_profile.avatar.url }}" alt="{{ page_context.oversight_user.username }} avatar" class="admin-selected-user-avatar rounded-circle">
+                {% else %}
+                <div class="admin-selected-user-avatar admin-selected-user-avatar-placeholder rounded-circle" aria-hidden="true">
+                    {{ page_context.oversight_user.username|slice:":1"|upper }}
+                </div>
+                {% endif %}
+                <div>
+                    <h2 class="h4 mb-1">{{ page_context.oversight_user.get_full_name|default:page_context.oversight_user.username }}</h2>
+                    <div class="text-body-secondary text-break">{{ page_context.oversight_user.username }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-4">Conversation</th>
+                            <th scope="col">Other Participant</th>
+                            <th scope="col">Messages</th>
+                            <th scope="col">Last Message</th>
+                            <th scope="col" class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in page_context.conversation_rows %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">#{{ row.conversation_id }}</td>
+                            <td>
+                                <a class="text-decoration-none" href="{{ row.other_user_profile_url }}">{{ row.other_user_display_name }}</a>
+                                <div class="small text-body-secondary text-break">{{ row.other_user_email_address }}</div>
+                            </td>
+                            <td>{{ row.message_count }}</td>
+                            <td>
+                                <div>{{ row.last_message_text|truncatechars:90 }}</div>
+                                {% if row.last_message_at %}
+                                <div class="small text-body-secondary">{{ row.last_message_at|date:"M j, Y g:i A" }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ row.detail_url }}">Open</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-body-secondary">This user does not currently have any conversations to review.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

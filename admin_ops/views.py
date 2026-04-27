@@ -13,7 +13,7 @@ from django.views.decorators.http import require_http_methods
 from admin_ops.forms import AdminDashboardDateRangeForm, AdministrationLogFilterForm, ListingManagementFilterForm, ModerationLogFilterForm, UserManagementFilterForm
 from admin_ops.utils.dashboard_analytics import build_admin_dashboard_page_context, get_default_dashboard_end_date, get_default_dashboard_start_date
 from admin_ops.utils.reports_hub import build_reports_hub_cards
-from admin_ops.utils.roles import is_user_administrator
+from admin_ops.utils.roles import is_user_administrator, is_user_moderator
 from admin_ops.utils.administration_log import (
     AdministrationLogActionError,
     AdministrationLogPermissionError,
@@ -48,6 +48,12 @@ from admin_ops.utils.user_management import (
 )
 
 
+
+
+from admin_ops.utils.conversation_oversight import (
+    build_limited_user_conversation_page_context,
+    build_user_conversations_page_context,
+)
 
 
 @login_required
@@ -325,11 +331,26 @@ def administration_log_selected_card_view(request: HttpRequest, action_id: int) 
 def user_conversations_view(request: HttpRequest, user_id: int) -> HttpResponse:
     _enforce_administrator_access(request)
 
+    page_context = build_user_conversations_page_context(user_id=int(user_id))
     context: dict[str, Any] = {
-        "oversight_user_id": int(user_id),
+        "page_context": page_context,
     }
     return render(request, "admin_ops/user_conversations.html", context)
 
+
+@login_required
+@require_http_methods(["GET"])
+def limited_user_conversation_view(request: HttpRequest, user_id: int, conversation_id: int) -> HttpResponse:
+    _enforce_staff_oversight_access(request)
+
+    page_context = build_limited_user_conversation_page_context(
+        user_id=int(user_id),
+        conversation_id=int(conversation_id),
+    )
+    context: dict[str, Any] = {
+        "page_context": page_context,
+    }
+    return render(request, "admin_ops/limited_user_conversation.html", context)
 
 
 @login_required
@@ -542,6 +563,12 @@ def _handle_moderation_log_post(request: HttpRequest) -> HttpResponse:
 
 def _enforce_administrator_access(request: HttpRequest) -> None:
     if not is_user_administrator(request.user):
+        raise PermissionDenied
+
+
+
+def _enforce_staff_oversight_access(request: HttpRequest) -> None:
+    if not (is_user_administrator(request.user) or is_user_moderator(request.user)):
         raise PermissionDenied
 
 

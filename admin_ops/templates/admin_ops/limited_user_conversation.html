@@ -1,0 +1,62 @@
+{% extends 'sidebar_content_view.html' %}
+
+{% block page_content %}
+<div class="container-fluid px-0">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-2">Conversation Review</h1>
+            <p class="text-body-secondary mb-0">Read-only conversation context for moderation and administrative oversight.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-secondary" href="{{ page_context.back_to_conversations_url }}">Back to Conversations</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Participant A</div>
+                    <h2 class="h4 mb-1">{{ page_context.participant_a.get_full_name|default:page_context.participant_a.username }}</h2>
+                    <div class="text-body-secondary text-break">{{ page_context.participant_a.username }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-4">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Participant B</div>
+                    <h2 class="h4 mb-1">{{ page_context.participant_b.get_full_name|default:page_context.participant_b.username }}</h2>
+                    <div class="text-body-secondary text-break">{{ page_context.participant_b.username }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4" style="max-height: 650px; overflow-y: auto;">
+            {% for row in page_context.message_rows %}
+                {% if row.is_selected_user_sender %}
+                <div class="d-flex justify-content-end mb-3">
+                    <div class="bg-primary text-white rounded-3 px-3 py-2" style="max-width: 75%;">
+                        <div class="small fw-semibold mb-1">{{ row.sender_display_name }}</div>
+                        <p class="mb-1">{{ row.message_text }}</p>
+                        <small class="d-block fw-light">{{ row.sent_at|date:"M j, Y g:i A" }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="d-flex justify-content-start mb-3">
+                    <div class="bg-body-tertiary rounded-3 px-3 py-2" style="max-width: 75%;">
+                        <div class="small fw-semibold mb-1">{{ row.sender_display_name }}</div>
+                        <p class="mb-1">{{ row.message_text }}</p>
+                        <small class="text-body-secondary">{{ row.sent_at|date:"M j, Y g:i A" }}</small>
+                    </div>
+                </div>
+                {% endif %}
+            {% empty %}
+            <p class="text-body-secondary text-center mb-0">No messages have been sent in this conversation yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

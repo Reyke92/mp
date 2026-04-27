@@ -203,3 +203,48 @@ class ReportTargetValidationTests(ReportWorkflowTestCase): #tests TC-REP-002
             "A report must target either a listing or a conversation.",
             response.context["form"].non_field_errors(),
         )
+
+
+class ReportIdentifierAllocationTests(ReportWorkflowTestCase):
+    def test_first_created_report_uses_zero_identifier(self) -> None:
+        report = Report.objects.create(
+            reporter_user=self.reporter,
+            listing=self.listing,
+            details="First report should use id zero.",
+            status=self.received_status,
+        )
+
+        self.assertEqual(int(report.report_id), 0)
+
+    def test_report_identifier_fills_lowest_available_gap(self) -> None:
+        report_zero = Report.objects.create(
+            reporter_user=self.reporter,
+            listing=self.listing,
+            details="Seed zero.",
+            status=self.received_status,
+        )
+        report_one = Report.objects.create(
+            reporter_user=self.reporter,
+            conversation=self.conversation,
+            details="Seed one.",
+            status=self.received_status,
+        )
+        report_two = Report.objects.create(
+            reporter_user=self.reporter,
+            listing=self.listing,
+            details="Seed two.",
+            status=self.received_status,
+        )
+
+        report_one.delete()
+
+        replacement_report = Report.objects.create(
+            reporter_user=self.reporter,
+            conversation=self.conversation,
+            details="Replacement should fill the gap.",
+            status=self.received_status,
+        )
+
+        self.assertEqual(int(report_zero.report_id), 0)
+        self.assertEqual(int(report_two.report_id), 2)
+        self.assertEqual(int(replacement_report.report_id), 1)

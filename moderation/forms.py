@@ -1,33 +1,39 @@
 from __future__ import annotations
 
-from crispy_forms.helper import FormHelper
-from django import forms
-from moderation.models import ModerationActionType
-from reports.models import ReportStatus
 from typing import Any
 
-# Status filter values
+from crispy_forms.helper import FormHelper
+from django import forms
+
+from moderation.models import ModerationActionType
+
+# Queue status filter values.
 QUEUE_STATUS_ALL_VALUE = ""
 QUEUE_STATUS_RECEIVED_VALUE = "received"
 QUEUE_STATUS_RESOLVED_VALUE = "resolved"
 
-# Type filter values
+# Queue target-type filter values.
 QUEUE_TYPE_ALL_VALUE = ""
 QUEUE_TYPE_LISTING_VALUE = "listing"
 QUEUE_TYPE_CONVERSATION_VALUE = "conversation"
 
-# Sort values
+# Queue sort values.
 QUEUE_SORT_OLDEST_OPEN_VALUE = "oldest_open"
 QUEUE_SORT_MOST_RECENT_VALUE = "most_recent"
 
+DISPOSITION_ACTION_NONE_VALUE = ""
+FREEZE_LISTING_ACTION_NAME = "FreezeListing"
+BAN_USER_ACTION_NAME = "BanUser"
+
+
 class ModerationQueueFilterForm(forms.Form):
     search_email = forms.CharField(
-        label="Search by reporter's email",
+        label="Search by email",
         required=False,
         widget=forms.TextInput(
             attrs={
                 "class": "form-control",
-                "placeholder": "Search by reporter's email",
+                "placeholder": "Reporter or target email",
             }
         ),
     )
@@ -45,7 +51,7 @@ class ModerationQueueFilterForm(forms.Form):
     )
 
     report_type = forms.ChoiceField(
-        label="Report Type",
+        label="Target Type",
         required=False,
         choices=(
             (QUEUE_TYPE_ALL_VALUE, "All Types"),
@@ -66,7 +72,7 @@ class ModerationQueueFilterForm(forms.Form):
         widget=forms.Select(attrs={"class": "form-select"}),
     )
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_method = "get"
@@ -76,19 +82,12 @@ class ModerationQueueFilterForm(forms.Form):
             self.initial.setdefault("report_status", QUEUE_STATUS_RECEIVED_VALUE)
             self.initial.setdefault("sort_by", QUEUE_SORT_OLDEST_OPEN_VALUE)
 
-DISPOSITION_ACTION_NONE_VALUE = ""
 
 class ReportDispositionForm(forms.Form):
-    report_status = forms.ChoiceField(
-        label="Report Status",
-        required=True,
-        widget=forms.Select(attrs={"class": "form-select"})
-    )
-
     action_type = forms.ChoiceField(
-        label="Moderation Action Type",
+        label="Action to record",
         required=False,
-        widget=forms.Select(attrs={"class": "form-select"})
+        widget=forms.Select(attrs={"class": "form-select"}),
     )
 
     notes = forms.CharField(
@@ -98,30 +97,36 @@ class ReportDispositionForm(forms.Form):
             attrs={
                 "class": "form-control",
                 "rows": 4,
-                "placeholder": "Notes (visible only to staff)"
+                "placeholder": "Notes visible only to staff.",
             }
-        )
+        ),
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        *args: Any,
+        allowed_action_names: list[str] | tuple[str, ...] | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
-        
+
+        self.allowed_action_names = tuple(allowed_action_names or ())
         self.helper = FormHelper(self)
         self.helper.form_tag = False
-        self.fields["report_status"].choices = self.build_status_choices()
-        self.fields["action_type"].choices = self.build_action_choices()
+        self.fields["action_type"].choices = self._build_action_choices()
 
-    @staticmethod
-    def build_status_choices():
-        choices = [("", "Select...")]
-        terminal_statuses = ReportStatus.objects.exclude(status_name="Received").order_by("status_id")
-        for status in terminal_statuses:
-            choices.append((str(status.status_id), str(status.status_name)))
-        return tuple(choices)
-    
-    @staticmethod
-    def build_action_choices():
-        choices = [(DISPOSITION_ACTION_NONE_VALUE, "No Action (dismiss)")]
-        for action_type in ModerationActionType.objects.all().order_by("action_type_id"):
+    def _build_action_choices(self) -> tuple[tuple[str, str], ...]:
+        choices: list[tuple[str, str]] = [(DISPOSITION_ACTION_NONE_VALUE, "Select an action...")]
+        queryset = ModerationActionType.objects.all().order_by("action_type_id")
+        if self.allowed_action_names:
+            queryset = queryset.filter(action_type_name__in=self.allowed_action_names)
+        for action_type in queryset:
             choices.append((str(action_type.action_type_id), str(action_type.action_type_name)))
         return tuple(choices)
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        action_type_value = str(cleaned_data.get("action_type") or "").strip()
+        if not action_type_value:
+            raise forms.ValidationError("Choose a moderation action to record, or use Dismiss Report.")
+        return cleaned_data

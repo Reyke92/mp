@@ -34,4 +34,9 @@ urlpatterns = [
         views.user_conversations_view,
         name="user_conversations",
     ),
+    path(
+        "admin/oversight/conversations/<int:user_id>/<int:conversation_id>/",
+        views.limited_user_conversation_view,
+        name="limited_user_conversation",
+    ),
 ]

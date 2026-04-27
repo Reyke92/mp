@@ -1,134 +1,213 @@
 {% extends "sidebar_content_view.html" %}
-{% load crispy_forms_tags %}
 
 {% block title %}Moderation Queue{% endblock %}
 
 {% block page_content %}
 <div class="container-fluid moderation-queue-page px-0">
-  <div class="mb-4">
-    <h1 class="h2 mb-2">Moderation Queue</h1>
-    <p class="text-body-secondary mb-0">
-      Review reported items and record dispositions
-    </p>
-  </div>
-
-  {# Filter card #}
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body p-4">
-      <h2 class="h4 mb-3">Search and filters</h2>
-
-      <form method="get" class="row g-3 align-items-end">
-        <div class="col-12 col-lg-4">
-          <label class="form-label" for="id_search_email">{{ filter_form.search_email.label }}</label>
-          {{ filter_form.search_email }}
-        </div>
-        <div class="col-12 col-md-4 col-lg-2">
-          <label class="form-label" for="id_report_status">{{ filter_form.report_status.label }}</label>
-          {{ filter_form.report_status }}
-        </div>
-        <div class="col-12 col-md-4 col-lg-2">
-          <label class="form-label" for="id_report_type">{{ filter_form.report_type.label }}</label>
-          {{ filter_form.report_type }}
-        </div>
-        <div class="col-12 col-md-4 col-lg-2">
-          <label class="form-label" for="id_sort_by">{{ filter_form.sort_by.label }}</label>
-          {{ filter_form.sort_by }}
-        </div>
-        <div class="col-12 col-lg-2 d-grid">
-          <button type="submit" class="btn btn-primary">Apply</button>
-        </div>
-      </form>
+    <div class="mb-4">
+        <h1 class="h2 mb-2">Moderation Queue</h1>
+        <p class="text-body-secondary mb-0">
+            Review open reports, surface repeated-target activity quickly, and keep older received reports moving.
+        </p>
     </div>
-  </div>
 
-  {# Results table #}
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table mb-0 align-middle">
-          <thead>
-            <tr>
-              <th scope="col" class="ps-4">Report ID</th>
-              <th scope="col">Type</th>
-              <th scope="col">Reason</th>
-              <th scope="col">Status</th>
-              <th scope="col" class="text-end pe-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in table_rows %}
-              <tr>
-                <td class="ps-4 fw-semibold">#{{ row.report_id }}</td>
-                <td>{{ row.report_type_label }}</td>
-                <td>{{ row.reason_text }}</td>
-                <td>
-                  <span class="badge text-bg-{{ row.status_variant }}">{{ row.status_label }}</span>
-                </td>
-                <td class="text-end pe-4">
-                  {% if row.detail_url %}
-                    <a class="btn btn-sm btn-outline-primary" href="{{ row.detail_url }}">Open</a>
-                  {% else %}
-                    <button type="button" class="btn btn-sm btn-outline-secondary" disabled>Open</button>
-                  {% endif %}
-                </td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td colspan="5" class="text-center py-5">
-                  <div class="px-3">
-                    <h2 class="h5 mb-2">No reports matched the current filters</h2>
+    <div class="row g-3 mb-4">
+        {% for card in queue_summary_cards %}
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="card shadow-sm border-0 h-100 admin-summary-card moderation-summary-card {% cycle 'moderation-summary-card-primary' 'moderation-summary-card-deep' 'moderation-summary-card-olive' 'moderation-summary-card-aqua' %}">
+                <div class="card-body p-4">
+                    <div class="small text-uppercase text-body-secondary fw-semibold mb-2">{{ card.label }}</div>
+                    <div class="display-6 fw-semibold mb-2">{{ card.value }}</div>
+                    <p class="text-body-secondary small mb-0">{{ card.subtext }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4 moderation-section-card moderation-section-card-attention">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3 moderation-section-header">
+                <div>
+                    <div class="moderation-section-kicker">Priority View</div>
+                    <h2 class="h4 mb-1">Needs Attention Now</h2>
                     <p class="text-body-secondary mb-0">
-                      Try broadening the filters or clearing the search to view more reports
+                        Targets with open reports are grouped here so repeated recent complaints and aging open items rise quickly.
                     </p>
-                  </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+                </div>
+                <div class="small text-body-secondary align-self-lg-end">
+                    Recent-report grouping window: last 30 days.
+                </div>
+            </div>
+
+            {% if needs_attention_rows %}
+            <div class="row g-3">
+                {% for row in needs_attention_rows %}
+                <div class="col-12 col-xl-6">
+                    <div class="border rounded-4 p-3 h-100 moderation-attention-item">
+                        <div class="d-flex justify-content-between gap-3 align-items-start mb-3">
+                            <div class="min-w-0">
+                                <div class="small text-uppercase text-body-secondary fw-semibold mb-1">{{ row.target_type_label }}</div>
+                                <h3 class="h5 mb-1 text-truncate">{{ row.target_display_name }}</h3>
+                                {% if row.target_email_address %}
+                                <div class="text-body-secondary text-break small">{{ row.target_email_address }}</div>
+                                {% endif %}
+                            </div>
+                            <a class="btn btn-outline-primary btn-sm flex-shrink-0" href="{{ row.review_url }}">Review</a>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="marketplace-chip">{{ row.open_report_count }} open</span>
+                            <span class="marketplace-chip">{{ row.recent_report_count }} recent</span>
+                            {% if row.oldest_open_created_at %}
+                            <span class="marketplace-chip">Oldest open {{ row.oldest_open_created_at|timesince }} ago</span>
+                            {% endif %}
+                        </div>
+                        <div class="small text-body-secondary">
+                            Most recent report: {{ row.most_recent_created_at|date:"M j, Y g:i A" }}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="border rounded-4 p-4 text-center text-body-secondary moderation-empty-state">
+                No repeated-target activity currently needs immediate attention beyond the main queue.
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    {# Pagination — only render when there's more than one page #}
-    {% if page_obj.paginator.num_pages > 1 %}
-      <div class="card-footer bg-transparent border-0 pt-3 pb-4">
-        <nav aria-label="Moderation queue pagination">
-          <ul class="pagination justify-content-center mb-0 flex-wrap gap-2">
-            {% if page_obj.has_previous %}
-              <li class="page-item">
-                <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
-              </li>
-            {% else %}
-              <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            {% endif %}
+    <div class="card shadow-sm border-0 mb-4 moderation-section-card moderation-section-card-filters">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3 moderation-section-header">
+                <div>
+                    <div class="moderation-section-kicker">Queue Controls</div>
+                    <h2 class="h4 mb-1">Search and Filters</h2>
+                    <p class="text-body-secondary mb-0">Narrow the queue while keeping the main review table simple and fast to work through.</p>
+                </div>
+            </div>
 
-            {% for page_number in page_range %}
-              {% if page_number == "…" %}
-                <li class="page-item disabled"><span class="page-link">…</span></li>
-              {% elif page_number == page_obj.number %}
-                <li class="page-item active" aria-current="page"><span class="page-link">{{ page_number }}</span></li>
-              {% else %}
-                <li class="page-item">
-                  <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_number }}">{{ page_number }}</a>
-                </li>
-              {% endif %}
-            {% endfor %}
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-lg-4">
+                    <label class="form-label" for="id_search_email">{{ filter_form.search_email.label }}</label>
+                    {{ filter_form.search_email }}
+                </div>
+                <div class="col-12 col-md-4 col-lg-2">
+                    <label class="form-label" for="id_report_status">{{ filter_form.report_status.label }}</label>
+                    {{ filter_form.report_status }}
+                </div>
+                <div class="col-12 col-md-4 col-lg-2">
+                    <label class="form-label" for="id_report_type">{{ filter_form.report_type.label }}</label>
+                    {{ filter_form.report_type }}
+                </div>
+                <div class="col-12 col-md-4 col-lg-2">
+                    <label class="form-label" for="id_sort_by">{{ filter_form.sort_by.label }}</label>
+                    {{ filter_form.sort_by }}
+                </div>
+                <div class="col-12 col-lg-2 d-grid">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-            {% if page_obj.has_next %}
-              <li class="page-item">
-                <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
-              </li>
-            {% else %}
-              <li class="page-item disabled"><span class="page-link">Next</span></li>
-            {% endif %}
-          </ul>
-        </nav>
-      </div>
-    {% endif %}
-  </div>
+    <div class="card shadow-sm border-0 mb-4 moderation-section-card moderation-section-card-table">
+        <div class="card-body p-0">
+            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 moderation-table-header">
+                <div>
+                    <div class="moderation-section-kicker">Working Queue</div>
+                    <h2 class="h4 mb-1">Main Moderation Queue</h2>
+                    <p class="text-body-secondary mb-0 small">Default processing order prioritizes open reports and older received items first.</p>
+                </div>
+                <div class="small text-body-secondary">{{ total_report_count }} report{{ total_report_count|pluralize }} matching current filters</div>
+            </div>
 
-  <p class="text-body-secondary small mb-0">
-    {{ total_report_count }} report{{ total_report_count|pluralize }} matching current filters.
-  </p>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle moderation-queue-table">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="ps-4">Report ID</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Target</th>
+                            <th scope="col">Reporter</th>
+                            <th scope="col">Recent vs Target</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Age</th>
+                            <th scope="col" class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in table_rows %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">#{{ row.report_id }}</td>
+                            <td>{{ row.report_type_label }}</td>
+                            <td>
+                                <div class="fw-semibold">{{ row.target_display_name }}</div>
+                                {% if row.target_email_address %}
+                                <div class="small text-body-secondary text-break">{{ row.target_email_address }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-break">{{ row.reporter_email_address }}</td>
+                            <td>{{ row.recent_target_report_count }}</td>
+                            <td><span class="badge text-bg-{{ row.status_variant }}">{{ row.status_label }}</span></td>
+                            <td>
+                                <div>{{ row.age_label }}</div>
+                                <div class="small text-body-secondary">{{ row.created_at|date:"M j, Y" }}</div>
+                            </td>
+                            <td class="text-end pe-4">
+                                <a class="btn btn-sm btn-outline-primary" href="{{ row.detail_url }}">Review</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="px-3">
+                                    <h2 class="h5 mb-2">No reports matched the current filters</h2>
+                                    <p class="text-body-secondary mb-0">Try broadening the filters or clearing the email search.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="card-footer bg-transparent border-0 pt-3 pb-4">
+            <nav aria-label="Moderation queue pagination">
+                <ul class="pagination justify-content-center mb-0 flex-wrap gap-2">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    {% for page_number in page_range %}
+                        {% if page_number == "…" %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                        {% elif page_number == page_obj.number %}
+                        <li class="page-item active" aria-current="page"><span class="page-link">{{ page_number }}</span></li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_number }}">{{ page_number }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if preserved_query_string_without_page %}{{ preserved_query_string_without_page }}&{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

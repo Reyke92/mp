@@ -1,133 +1,176 @@
 {% extends "sidebar_content_view.html" %}
-{% load crispy_forms_tags %}
 
-{% block title %}Report #{{ page_context.report.report_id }}{% endblock %}
+{% block title %}Review Report{% endblock %}
 
 {% block page_content %}
 <div class="container-fluid moderation-report-detail-page px-0">
-  <div class="mb-4 d-flex justify-content-between align-items-end">
-    <div>
-      <h1 class="h2 mb-2">Review Report</h1>
-      <p class="text-body-secondary mb-0">
-        Inspect the report and record a disposition.
-      </p>
+    <div class="mb-4">
+        <h1 class="h2 mb-2">{% if page_context.readonly_mode %}View Report{% else %}Review Report{% endif %}</h1>
+        <p class="text-body-secondary mb-0">
+            {% if page_context.readonly_mode %}
+            This report is being shown in read-only mode from an oversight page.
+            {% else %}
+            Review the report, inspect the target, and record a disposition without manually editing the report status.
+            {% endif %}
+        </p>
     </div>
-    <a href="{{ page_context.back_to_queue_url }}" class="btn btn-outline-secondary">
-      &lsaquo; Back to Queue
-    </a>
-  </div>
 
-  {# Report Summary card #}
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body p-4">
-      <div class="d-flex justify-content-between align-items-start gap-3 mb-4 flex-wrap">
-        <div>
-          <h2 class="h4 mb-1">Report Summary</h2>
-          <span class="badge text-bg-{{ page_context.status_variant }}">
-            {{ page_context.status_label }}
-          </span>
+    <div class="row g-4 align-items-start mb-4">
+        <div class="col-12 col-xl-8">
+            <div class="card shadow-sm border-0 h-100 moderation-report-summary-card">
+                <div class="card-body p-4 p-xl-5">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4 moderation-section-header">
+                        <div>
+                            <div class="moderation-section-kicker">Report Summary</div>
+                            <h2 class="h4 mb-1">#{{ page_context.report.report_id }} · {{ page_context.report_type_label }}</h2>
+                            <p class="text-body-secondary mb-0">Created {{ page_context.report.created_at|date:"M j, Y g:i A" }}</p>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap align-items-start">
+                            <span class="badge text-bg-{{ page_context.status_variant }} align-self-start">{{ page_context.status_label }}</span>
+                            <a class="btn btn-outline-secondary btn-sm" href="{{ page_context.back_to_queue_url }}">Back to Queue</a>
+                        </div>
+                    </div>
+
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reporter</dt>
+                        <dd class="col-sm-9 col-lg-10 mb-3">
+                            <a class="text-decoration-none" href="{{ page_context.view_reporter_url }}">{{ page_context.reporter_email }}</a>
+                        </dd>
+
+                        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reported User</dt>
+                        <dd class="col-sm-9 col-lg-10 mb-3">
+                            {% if page_context.reported_user_profile_url %}
+                            <a class="text-decoration-none" href="{{ page_context.reported_user_profile_url }}">{{ page_context.reported_user_display_name }}</a>
+                            {% else %}
+                            {{ page_context.reported_user_display_name }}
+                            {% endif %}
+                            <div class="small text-body-secondary text-break">{{ page_context.reported_user_email }}</div>
+                        </dd>
+
+                        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Target</dt>
+                        <dd class="col-sm-9 col-lg-10 mb-3">
+                            <div class="fw-semibold">{{ page_context.target_display_name }}</div>
+                            <div class="small text-body-secondary">{{ page_context.target_subtext }}</div>
+                        </dd>
+
+                        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reason</dt>
+                        <dd class="col-sm-9 col-lg-10 mb-0">
+                            {% if page_context.report.details %}
+                            {{ page_context.report.details|linebreaksbr }}
+                            {% else %}
+                            <span class="text-body-secondary fst-italic">(no reason provided)</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+
+                    <div class="d-flex flex-wrap gap-2 mt-4">
+                        {% if page_context.view_target_url %}
+                        <a href="{{ page_context.view_target_url }}" class="btn btn-outline-primary">{{ page_context.view_target_label }}</a>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-secondary" disabled title="{{ page_context.view_target_disabled_reason }}">{{ page_context.view_target_label }}</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex gap-2 flex-wrap">
-          {# View Target — Disabled for future implementation #}
-          {% if page_context.view_target_url %}
-            <a href="{{ page_context.view_target_url }}"
-               class="btn btn-sm btn-outline-primary">View Target</a>
-          {% else %}
-            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
-                    title="{{ page_context.view_target_disabled_reason }}">View Target</button>
-          {% endif %}
-
-          <a href="{{ page_context.view_reporter_url }}"
-             class="btn btn-sm btn-outline-primary">View Reporter</a>
-
-          {% if page_context.view_user_url %}
-            <a href="{{ page_context.view_user_url }}"
-               class="btn btn-sm btn-outline-primary">View User</a>
-          {% else %}
-            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
-                    title="No specific reported user is associated with this report.">
-              View User
-            </button>
-          {% endif %}
+        <div class="col-12 col-xl-4">
+            <div class="card shadow-sm border-0 h-100 moderation-report-disposition-card">
+                <div class="card-body p-4">
+                    <div class="moderation-section-kicker">Disposition</div>
+                    {% if page_context.readonly_mode %}
+                    <h2 class="h4 mb-2">Read-only</h2>
+                    <p class="text-body-secondary mb-3">This report is being viewed from an oversight screen, so no new moderation action can be recorded here.</p>
+                    {% if page_context.action_label %}
+                    <div class="border rounded-4 p-3 mb-3 moderation-report-stat-box">
+                        <div class="fw-semibold mb-1">Recorded Outcome</div>
+                        <div>{{ page_context.action_label }}</div>
+                        {% if page_context.action_notes %}
+                        <div class="small text-body-secondary mt-2">{{ page_context.action_notes }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <h2 class="h4 mb-2">Record Disposition</h2>
+                    <p class="text-body-secondary mb-3">
+                        Saving a disposition updates the selected report and any other currently open recent reports for the same target.
+                    </p>
+                    <div class="border rounded-4 p-3 mb-3 moderation-report-stat-box">
+                        <div class="fw-semibold mb-1">Open related reports affected</div>
+                        <div class="display-6 mb-0">{{ page_context.affected_open_related_report_count }}</div>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label" for="id_action_type">{{ disposition_form.action_type.label }}</label>
+                            {{ disposition_form.action_type }}
+                            {% if disposition_form.action_type.errors %}
+                            <div class="invalid-feedback d-block">{{ disposition_form.action_type.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="id_notes">{{ disposition_form.notes.label }}</label>
+                            {{ disposition_form.notes }}
+                        </div>
+                        {% if disposition_form.non_field_errors %}
+                        <div class="alert alert-danger border-0" role="alert">
+                            {{ disposition_form.non_field_errors|join:", " }}
+                        </div>
+                        {% endif %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" name="action" value="save" class="btn btn-primary">Save Disposition</button>
+                            <button type="submit" name="action" value="dismiss" class="btn btn-outline-danger">Dismiss Report</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-
-      </div>
-
-      <dl class="row mb-0">
-        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Report ID</dt>
-        <dd class="col-sm-9 col-lg-10 mb-2">#{{ page_context.report.report_id }}</dd>
-
-        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Type</dt>
-        <dd class="col-sm-9 col-lg-10 mb-2">{{ page_context.report_type_label }}</dd>
-
-        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reason</dt>
-        <dd class="col-sm-9 col-lg-10 mb-2">
-          {% if page_context.report.details %}
-            {{ page_context.report.details|linebreaksbr }}
-          {% else %}
-            <span class="text-body-secondary fst-italic">(no reason provided)</span>
-          {% endif %}
-        </dd>
-
-        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reporter</dt>
-        <dd class="col-sm-9 col-lg-10 mb-2">{{ page_context.reporter_email }}</dd>
-
-        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reported User</dt>
-        <dd class="col-sm-9 col-lg-10 mb-2">
-          {% if page_context.reported_user_email %}
-            {{ page_context.reported_user_email }}
-          {% else %}
-            <span class="text-body-secondary fst-italic">—</span>
-          {% endif %}
-        </dd>
-
-        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Created</dt>
-        <dd class="col-sm-9 col-lg-10 mb-0">
-          {{ page_context.report.created_at|date:"M j, Y g:i A" }}
-        </dd>
-      </dl>
     </div>
-  </div>
 
-  {# Disposition card #}
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-body p-4">
-      <h2 class="h4 mb-3">Disposition</h2>
+    <div class="card shadow-sm border-0 moderation-report-related-card">
+        <div class="card-body p-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3 moderation-section-header">
+                <div>
+                    <div class="moderation-section-kicker">Related Activity</div>
+                    <h2 class="h4 mb-1">Recent Related Reports</h2>
+                    <p class="text-body-secondary mb-0">Reports against the same target within the last 30 days are shown together for quicker context.</p>
+                </div>
+            </div>
 
-      <form method="post" action="">
-        {% csrf_token %}
-
-        <div class="row g-3">
-          <div class="col-12 col-lg-4">
-            <label class="form-label" for="id_report_status">
-              {{ disposition_form.report_status.label }}
-            </label>
-            {{ disposition_form.report_status }}
-          </div>
-          <div class="col-12 col-lg-4">
-            <label class="form-label" for="id_action_type">
-              {{ disposition_form.action_type.label }}
-            </label>
-            {{ disposition_form.action_type }}
-          </div>
-          <div class="col-12 col-lg-4">
-            <label class="form-label" for="id_notes">
-              {{ disposition_form.notes.label }}
-            </label>
-            {{ disposition_form.notes }}
-          </div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle moderation-related-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Report ID</th>
+                            <th scope="col">Reporter</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Details</th>
+                            <th scope="col" class="text-end">Open</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for related in page_context.related_recent_reports %}
+                        <tr{% if related.is_current_report %} class="table-active"{% endif %}>
+                            <td class="fw-semibold">#{{ related.report_id }}</td>
+                            <td class="text-break">{{ related.reporter_email_address }}</td>
+                            <td><span class="badge text-bg-{{ related.status_variant }}">{{ related.status_label }}</span></td>
+                            <td>{{ related.created_at|date:"M j, Y g:i A" }}</td>
+                            <td>{{ related.details_preview }}</td>
+                            <td class="text-end">
+                                <a class="btn btn-sm btn-outline-secondary" href="{{ related.detail_url }}{% if page_context.readonly_mode %}?readonly=1{% endif %}">{% if related.is_current_report %}Current{% else %}Open{% endif %}</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-body-secondary">No related reports were found for this target.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-
-        <div class="d-flex gap-2 flex-wrap mt-4">
-          <button type="submit" name="action" value="save" class="btn btn-primary" disabled>Save Disposition</button>
-          <a href="{{ page_context.back_to_queue_url }}" class="btn btn-outline-secondary">
-            Back to Queue
-          </a>
-          <button type="submit" name="action" value="dismiss" class="btn btn-outline-danger ms-auto" disabled>Dismiss</button>
-        </div>
-      </form>
     </div>
-  </div>
 </div>
 {% endblock %}
