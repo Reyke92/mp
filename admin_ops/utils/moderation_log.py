@@ -48,7 +48,6 @@ from admin_ops.models import UserRoleAssignment
 PAGE_SIZE: int = 20
 BAN_USER_ACTION_TYPE_NAME: str = "BanUser"
 FREEZE_LISTING_ACTION_TYPE_NAME: str = "FreezeListing"
-PLACEHOLDER_REPORT_URL: str = "#"
 TARGET_TYPE_USER_LABEL: str = "User"
 TARGET_TYPE_LISTING_LABEL: str = "Listing"
 _TARGET_NAME_MAX_LENGTH: int = 48
@@ -582,7 +581,10 @@ def _build_selected_report(
         can_unfreeze_listing=can_unfreeze_listing,
         can_ban_user=can_ban_user,
         can_unban_user=can_unban_user,
-        report_placeholder_url=PLACEHOLDER_REPORT_URL,
+        report_placeholder_url=(
+            f"{reverse('report_details', kwargs={'report_id': int(report.report_id)})}?readonly=1"
+            if report is not None else "#"
+        ),
     )
 
 

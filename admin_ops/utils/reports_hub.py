@@ -58,7 +58,7 @@ _REPORT_HUB_DEFINITIONS: Final[tuple[ReportHubDefinition, ...]] = (
         description="Open the moderation queue to review flagged marketplace content awaiting staff attention and disposition.",
         category_label="Workflow Queue",
         accent_class="admin-report-link-card-red",
-        fallback_url="/moderation/queue",
+        fallback_url="/moderation/queue/",
     ),
     ReportHubDefinition(
         key="moderation_log",

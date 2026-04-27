@@ -168,6 +168,11 @@
                             <input type="hidden" name="listing_id" value="{{ detail.listing.listing_id }}">
                             <button type="submit" class="btn btn-primary">Message Seller</button>
                         </form>
+                        {% if detail.can_report_listing and detail.report_listing_url %}
+                        <a class="btn btn-outline-secondary d-grid mt-2" href="{{ detail.report_listing_url }}">
+                            Report Listing
+                        </a>
+                        {% endif %}
                     {% else %}
                         <button type="button" class="btn btn-primary w-100" disabled>
                             Message Seller (Sign In Required)
