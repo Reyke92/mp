@@ -22,6 +22,7 @@
                 <div>
                     <h2 class="h4 mb-1">{{ page_context.oversight_user.get_full_name|default:page_context.oversight_user.username }}</h2>
                     <div class="text-body-secondary text-break">{{ page_context.oversight_user.username }}</div>
+                    <div class="small text-body-secondary">User ID #{{ page_context.oversight_user.id }}</div>
                 </div>
             </div>
         </div>

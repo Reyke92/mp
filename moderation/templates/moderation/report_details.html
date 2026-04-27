@@ -1,11 +1,11 @@
 {% extends "sidebar_content_view.html" %}
 
-{% block title %}Review Report{% endblock %}
+{% block title %}Report Review{% endblock %}
 
 {% block page_content %}
 <div class="container-fluid moderation-report-detail-page px-0">
     <div class="mb-4">
-        <h1 class="h2 mb-2">{% if page_context.readonly_mode %}View Report{% else %}Review Report{% endif %}</h1>
+        <h1 class="h2 mb-2">{% if page_context.readonly_mode %}View Report{% else %}Report Review{% endif %}</h1>
         <p class="text-body-secondary mb-0">
             {% if page_context.readonly_mode %}
             This report is being shown in read-only mode from an oversight page.

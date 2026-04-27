@@ -82,6 +82,19 @@ class ModerationQueueFilterForm(forms.Form):
             self.initial.setdefault("report_status", QUEUE_STATUS_RECEIVED_VALUE)
             self.initial.setdefault("sort_by", QUEUE_SORT_OLDEST_OPEN_VALUE)
 
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+
+        # Preserve the queue's default workflow when callers submit only a subset
+        # of query-string controls, such as changing sort order without explicitly
+        # sending the report-status field.
+        if "report_status" not in self.data:
+            cleaned_data["report_status"] = QUEUE_STATUS_RECEIVED_VALUE
+        if "sort_by" not in self.data:
+            cleaned_data["sort_by"] = QUEUE_SORT_OLDEST_OPEN_VALUE
+
+        return cleaned_data
+
 
 class ReportDispositionForm(forms.Form):
     action_type = forms.ChoiceField(
