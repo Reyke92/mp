@@ -295,7 +295,7 @@ def record_report_disposition(
     else:
         raise PermissionDenied("The selected moderation action is not supported for this report.")
 
-    resolved_status = get_object_or_404(ReportStatus, status_name=ACTION_TAKEN_STATUS_NAME)
+    resolved_status = _get_or_create_report_status(ACTION_TAKEN_STATUS_NAME)
     Report.objects.filter(report_id__in=[int(item.report_id) for item in related_reports]).update(
         status=resolved_status,
         action=moderation_action,
@@ -305,7 +305,7 @@ def record_report_disposition(
 
 def _dismiss_related_reports(*, report: Report) -> int:
     related_reports = find_related_reports_for_report(report=report, include_selected_always=True, received_only=True)
-    dismissed_status = get_object_or_404(ReportStatus, status_name=DISMISSED_STATUS_NAME)
+    dismissed_status = _get_or_create_report_status(DISMISSED_STATUS_NAME)
     Report.objects.filter(report_id__in=[int(item.report_id) for item in related_reports]).update(
         status=dismissed_status,
         action=None,
@@ -353,7 +353,7 @@ def _ban_user_for_reports(
     if int(target_user.id) == int(actor_user.id):
         raise PermissionDenied("You cannot ban your own account through moderation.")
     if (target_role_name or "").lower() == ADMINISTRATOR_ROLE_NAME.lower():
-        raise PermissionDenied("Administrator accounts cannot be banned through moderation.")
+        raise PermissionDenied("Administrator accounts cannot be banned.")
     if not bool(target_user.is_active):
         raise PermissionDenied("This account is already banned.")
 
@@ -376,6 +376,11 @@ def _get_current_role_name(user: Any) -> str | None:
     if role_assignment is None:
         return None
     return str(role_assignment.role.role_name)
+
+
+def _get_or_create_report_status(status_name: str) -> ReportStatus:
+    report_status, _ = ReportStatus.objects.get_or_create(status_name=status_name)
+    return report_status
 
 
 def _build_person_display_name(user: Any) -> str:
