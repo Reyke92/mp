@@ -3,12 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from django.core.paginator import Page, Paginator
 from django.db.models import QuerySet
+from django.urls import reverse
 from reports.models import Report
 from urllib.parse import urlencode
 from moderation.forms import (
     QUEUE_SORT_MOST_RECENT_VALUE,
     QUEUE_SORT_OLDEST_OPEN_VALUE,
-    QUEUE_STATUS_RECIEVED_VALUE,
+    QUEUE_STATUS_RECEIVED_VALUE,
     QUEUE_STATUS_RESOLVED_VALUE,
     QUEUE_TYPE_CONVERSATION_VALUE,
     QUEUE_TYPE_LISTING_VALUE,
@@ -23,7 +24,7 @@ class ModerationQueueRow:
     reason_text: str
     status_label: str
     status_variant: str
-    detail_url: str | None
+    detail_url: str
 
 @dataclass(frozen=True)
 class ModerationQueuePageContent:
@@ -71,10 +72,10 @@ def build_queue_queryset(*, search_email: str, report_status: str, report_type: 
     if search_email:
         queryset = queryset.filter(reporter_user__username__icontains=search_email)
     
-    if report_status == QUEUE_STATUS_RECIEVED_VALUE:
+    if report_status == QUEUE_STATUS_RECEIVED_VALUE:
         queryset = queryset.filter(status__status_name="Received")
     elif report_status == QUEUE_STATUS_RESOLVED_VALUE:
-        queryset = queryset.filter(status__status_name="Resolved")
+        queryset = queryset.filter(status__status_name__in=["ActionTaken", "Dismissed"])
 
     if report_type == QUEUE_TYPE_LISTING_VALUE:
         queryset = queryset.filter(listing__isnull=False)
@@ -108,7 +109,7 @@ def build_row(report: Report):
     status_name = str(report.status.status_name)
     status_variant = "warning" if status_name == "Recieved" else "secondary"
     reason = str(report.details).strip()
-    detail_url = None   #temporary; add later
+    detail_url = reverse("report_details", kwargs={"report_id": report.report_id})
 
     return ModerationQueueRow(
         report_id=int(report.report_id),

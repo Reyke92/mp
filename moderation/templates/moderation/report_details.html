@@ -1,0 +1,133 @@
+{% extends "sidebar_content_view.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Report #{{ page_context.report.report_id }}{% endblock %}
+
+{% block page_content %}
+<div class="container-fluid moderation-report-detail-page px-0">
+  <div class="mb-4 d-flex justify-content-between align-items-end">
+    <div>
+      <h1 class="h2 mb-2">Review Report</h1>
+      <p class="text-body-secondary mb-0">
+        Inspect the report and record a disposition.
+      </p>
+    </div>
+    <a href="{{ page_context.back_to_queue_url }}" class="btn btn-outline-secondary">
+      &lsaquo; Back to Queue
+    </a>
+  </div>
+
+  {# Report Summary card #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-start gap-3 mb-4 flex-wrap">
+        <div>
+          <h2 class="h4 mb-1">Report Summary</h2>
+          <span class="badge text-bg-{{ page_context.status_variant }}">
+            {{ page_context.status_label }}
+          </span>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+          {# View Target — Disabled for future implementation #}
+          {% if page_context.view_target_url %}
+            <a href="{{ page_context.view_target_url }}"
+               class="btn btn-sm btn-outline-primary">View Target</a>
+          {% else %}
+            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                    title="{{ page_context.view_target_disabled_reason }}">View Target</button>
+          {% endif %}
+
+          <a href="{{ page_context.view_reporter_url }}"
+             class="btn btn-sm btn-outline-primary">View Reporter</a>
+
+          {% if page_context.view_user_url %}
+            <a href="{{ page_context.view_user_url }}"
+               class="btn btn-sm btn-outline-primary">View User</a>
+          {% else %}
+            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
+                    title="No specific reported user is associated with this report.">
+              View User
+            </button>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <dl class="row mb-0">
+        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Report ID</dt>
+        <dd class="col-sm-9 col-lg-10 mb-2">#{{ page_context.report.report_id }}</dd>
+
+        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Type</dt>
+        <dd class="col-sm-9 col-lg-10 mb-2">{{ page_context.report_type_label }}</dd>
+
+        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reason</dt>
+        <dd class="col-sm-9 col-lg-10 mb-2">
+          {% if page_context.report.details %}
+            {{ page_context.report.details|linebreaksbr }}
+          {% else %}
+            <span class="text-body-secondary fst-italic">(no reason provided)</span>
+          {% endif %}
+        </dd>
+
+        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reporter</dt>
+        <dd class="col-sm-9 col-lg-10 mb-2">{{ page_context.reporter_email }}</dd>
+
+        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Reported User</dt>
+        <dd class="col-sm-9 col-lg-10 mb-2">
+          {% if page_context.reported_user_email %}
+            {{ page_context.reported_user_email }}
+          {% else %}
+            <span class="text-body-secondary fst-italic">—</span>
+          {% endif %}
+        </dd>
+
+        <dt class="col-sm-3 col-lg-2 text-body-secondary fw-normal">Created</dt>
+        <dd class="col-sm-9 col-lg-10 mb-0">
+          {{ page_context.report.created_at|date:"M j, Y g:i A" }}
+        </dd>
+      </dl>
+    </div>
+  </div>
+
+  {# Disposition card #}
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+      <h2 class="h4 mb-3">Disposition</h2>
+
+      <form method="post" action="">
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <div class="col-12 col-lg-4">
+            <label class="form-label" for="id_report_status">
+              {{ disposition_form.report_status.label }}
+            </label>
+            {{ disposition_form.report_status }}
+          </div>
+          <div class="col-12 col-lg-4">
+            <label class="form-label" for="id_action_type">
+              {{ disposition_form.action_type.label }}
+            </label>
+            {{ disposition_form.action_type }}
+          </div>
+          <div class="col-12 col-lg-4">
+            <label class="form-label" for="id_notes">
+              {{ disposition_form.notes.label }}
+            </label>
+            {{ disposition_form.notes }}
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap mt-4">
+          <button type="submit" name="action" value="save" class="btn btn-primary" disabled>Save Disposition</button>
+          <a href="{{ page_context.back_to_queue_url }}" class="btn btn-outline-secondary">
+            Back to Queue
+          </a>
+          <button type="submit" name="action" value="dismiss" class="btn btn-outline-danger ms-auto" disabled>Dismiss</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
