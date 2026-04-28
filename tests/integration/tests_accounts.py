@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import tempfile
 from pathlib import Path
 
 from django.conf import settings
@@ -37,29 +38,32 @@ class AccountViewIntegrationTests(MarketplaceTestCase):
         self.assign_role(user=self.admin, role_name="Administrator")
         self.assign_role(user=self.moderator, role_name="Moderator")
 
-    @override_settings(MEDIA_ROOT="/tmp/marketplace-test-media")
     def test_register_view_creates_user_and_profile(self) -> None:
-        media_root = Path(settings.MEDIA_ROOT)
-        media_root.mkdir(parents=True, exist_ok=True)
-        (media_root / "DefaultAvatar.png").write_bytes(b"avatar")
+        # TC-AUTH-001: successful registration creates the account/profile and signs the user in.
+        media_root = Path(tempfile.gettempdir()) / "marketplace-test-media"
+        with override_settings(MEDIA_ROOT=str(media_root)):
+            media_root.mkdir(parents=True, exist_ok=True)
+            (Path(settings.MEDIA_ROOT) / "DefaultAvatar.png").write_bytes(b"avatar")
 
-        response = self.client.post(
-            reverse("register"),
-            data={
-                "email": "newuser@example.com",
-                "first_name": "New",
-                "last_name": "User",
-                "password1": "Password123!",
-                "password2": "Password123!",
-                "city_name": self.world.city.city_name,
-                "state_name": self.world.state.state_name,
-            },
-        )
+            response = self.client.post(
+                reverse("register"),
+                data={
+                    "email": "newuser@example.com",
+                    "first_name": "New",
+                    "last_name": "User",
+                    "password1": "Password123!",
+                    "password2": "Password123!",
+                    "city_name": self.world.city.city_name,
+                    "state_name": self.world.state.state_name,
+                },
+            )
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(UserProfile.objects.filter(user__username="newuser@example.com").exists())
+        self.assertIn("_auth_user_id", self.client.session)
 
     def test_login_view_rejects_invalid_credentials_with_generic_error(self) -> None:
+        # TC-AUTH-004: invalid login uses a generic error message.
         response = self.client.post(
             reverse("login"),
             data={"email": self.user.username, "password": "wrong-password"},
@@ -69,6 +73,7 @@ class AccountViewIntegrationTests(MarketplaceTestCase):
         self.assertContains(response, "Invalid email or password.")
 
     def test_login_and_logout_flow_updates_session_access(self) -> None:
+        # TC-AUTH-003 / TC-SEC-002: login opens access and logout invalidates it.
         login_response = self.client.post(
             reverse("login"),
             data={"email": self.user.username, "password": self.password},
@@ -85,6 +90,7 @@ class AccountViewIntegrationTests(MarketplaceTestCase):
         self.assertEqual(redirected_response.status_code, 302)
 
     def test_edit_profile_view_updates_profile_and_user_names(self) -> None:
+        # TC-PROF-001: authenticated users can update profile and name fields.
         self.client.force_login(self.user)
 
         response = self.client.post(
@@ -105,6 +111,7 @@ class AccountViewIntegrationTests(MarketplaceTestCase):
         self.assertEqual(profile.bio, "Updated biography.")
 
     def test_view_profile_view_returns_404_for_regular_user(self) -> None:
+        # TC-RBAC-001: regular users cannot use privileged profile-inspection routes.
         self.client.force_login(self.user)
 
         response = self.client.get(reverse("view_profile", kwargs={"id": int(self.user.id)}))
@@ -112,6 +119,7 @@ class AccountViewIntegrationTests(MarketplaceTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_view_profile_view_allows_administrator(self) -> None:
+        # TC-RBAC-001: administrators can use privileged profile-inspection routes.
         self.client.force_login(self.admin)
 
         response = self.client.get(reverse("view_profile", kwargs={"id": int(self.user.id)}))

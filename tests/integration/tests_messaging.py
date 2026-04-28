@@ -19,6 +19,7 @@ class StartConversationIntegrationTests(MarketplaceTestCase):
         )
 
     def test_start_conversation_view_creates_new_conversation_and_redirects(self):
+        # TC-MSG-001: listing contact creates a buyer-seller conversation.
         self.client.force_login(self.buyer)
 
         response = self.client.post(reverse("messaging:start"), {"listing_id": int(self.listing.listing_id)})
@@ -33,6 +34,7 @@ class StartConversationIntegrationTests(MarketplaceTestCase):
         self.assertRedirects(response, expected_url)
 
     def test_start_conversation_view_with_existing_conversation(self):
+        # TC-MSG-001 / TC-MSG-004: listing contact reuses an existing conversation.
         self.client.force_login(self.buyer)
 
         # Create an existing conversation and ensure it is not duplicated
@@ -47,6 +49,7 @@ class StartConversationIntegrationTests(MarketplaceTestCase):
         self.assertEqual(first_response.url, second_response.url)   #type: ignore
 
     def test_start_conversation_view_requires_authentication(self):
+        # TC-SEC-001: unauthenticated users cannot initiate messaging.
         response = self.client.post(reverse("messaging:start"), {"listing_id": int(self.listing.listing_id)})
 
         self.assertEqual(response.status_code, 302)
@@ -63,6 +66,7 @@ class SendMessageIntegrationTests(MarketplaceTestCase):
         self.conversation = Conversation.objects.create(user_a=user_a, user_b=user_b)
 
     def test_send_message_view_persists_all_required_metadata(self):
+        # TC-MSG-002 / TC-DATA-008: sending a message persists sender, conversation, text, and timestamp.
         self.client.force_login(self.buyer)
         message_txt = "Hi, is this still available?"
 
@@ -84,6 +88,7 @@ class SendMessageIntegrationTests(MarketplaceTestCase):
         self.assertLessEqual(message.sent_at, after_send)
 
     def test_send_message_view_redirects_to_conversation_view(self):
+        # TC-MSG-002: successful message submission returns to the conversation thread.
         self.client.force_login(self.buyer)
 
         response = self.client.post(
@@ -117,6 +122,7 @@ class ConversationVisibilityIntegrationTests(MarketplaceTestCase):
         )
 
     def test_participant_a_can_view_conversation(self):
+        # TC-MSG-003: participant A can view conversation history.
         self.client.force_login(self.participant_a)
         response = self.client.get(reverse("messaging:conversation", kwargs={"conversation_id": self.conversation.conversation_id}))
         self.assertEqual(response.status_code, 200)
@@ -124,6 +130,7 @@ class ConversationVisibilityIntegrationTests(MarketplaceTestCase):
         self.assertEqual(len(response.context["thread_messages"]), 2)
         
     def test_participant_b_can_view_conversation(self):
+        # TC-MSG-003: participant B can view conversation history.
         self.client.force_login(self.participant_b)
         response = self.client.get(reverse("messaging:conversation", kwargs={"conversation_id": self.conversation.conversation_id}))
         self.assertEqual(response.status_code, 200)
@@ -131,6 +138,7 @@ class ConversationVisibilityIntegrationTests(MarketplaceTestCase):
         self.assertEqual(len(response.context["thread_messages"]), 2)
 
     def test_non_participant_cannot_view_conversation(self):
+        # TC-MSG-003 / TC-SEC-006: non-participants cannot view conversation history.
         self.client.force_login(self.non_participant)
         response = self.client.get(reverse("messaging:conversation", kwargs={"conversation_id": self.conversation.conversation_id}))
         self.assertEqual(response.status_code, 403)
@@ -152,6 +160,7 @@ class StartCoversationDoesNotDuplicateIntegrationTests(MarketplaceTestCase):
         self.existing_conversation = Conversation.objects.create(user_a=user_1, user_b=user_2)
 
     def test_start_conversation_does_not_create_duplicate(self):
+        # TC-MSG-004 / TC-DATA-008: reversed participant order still reuses one conversation row.
         self.client.force_login(self.user_b)
 
         response = self.client.post(reverse("messaging:start"), {"listing_id": int(self.listing.listing_id)})
@@ -178,6 +187,7 @@ class StartConversationSelfMessagingIntegrationTests(MarketplaceTestCase):
         )
 
     def test_start_conversation_with_self_is_forbidden(self):
+        # TC-MSG-005: sellers cannot start conversations with themselves.
         self.client.force_login(self.user)
 
         response = self.client.post(reverse("messaging:start"), {"listing_id": int(self.listing.listing_id)})
@@ -196,6 +206,7 @@ class SendMessageEmptyContentIntegrationTests(MarketplaceTestCase):
         self.conversation = Conversation.objects.create(user_a=user_a, user_b=user_b)
 
     def test_empty_or_whitespace_only_message_is_not_sent(self):
+        # TC-MSG-006: empty and whitespace-only messages are not persisted.
         self.client.force_login(self.buyer)
         send_url = reverse("messaging:send_message", kwargs={"conversation_id": self.conversation.conversation_id})
         thread_url = reverse("messaging:conversation", kwargs={"conversation_id": self.conversation.conversation_id})
@@ -220,6 +231,7 @@ class StartConversationNonViewableListingIntegrationTests(MarketplaceTestCase):
         self.seller = self.create_user(email="seller@example.com", with_profile=True, city=self.world.city)
 
     def test_buyer_cannot_start_conversation_for_frozen_listing(self):
+        # TC-MSG-007: frozen listings cannot be used to start buyer conversations.
         frozen_listing = self.create_listing(
             seller_user=self.seller,
             world=self.world,
@@ -235,6 +247,7 @@ class StartConversationNonViewableListingIntegrationTests(MarketplaceTestCase):
         self.assertEqual(Conversation.objects.count(), 0)
 
     def test_buyer_cannot_start_conversation_for_deleted_listing(self):
+        # TC-MSG-007: deleted listings cannot be used to start buyer conversations.
         deleted_listing = self.create_listing(
             seller_user=self.seller,
             world=self.world,
@@ -264,6 +277,7 @@ class InboxViewIntegrationTests(MarketplaceTestCase):
         Message.objects.create(conversation=self.conversation_as_user_b, sender_user=self.other_two, message_text="Message from other_two to test_user.")
 
     def test_inbox_view_shows_all_conversations(self):
+        # TC-MSG-008: inbox includes conversations where the user is on either side of the pair.
         self.client.force_login(self.test_user)
         response = self.client.get(reverse("messaging:inbox"))
 
@@ -271,6 +285,15 @@ class InboxViewIntegrationTests(MarketplaceTestCase):
         conversations_in_context = set(response.context["rows"])
         self.assertIn(self.conversation_as_user_a, conversations_in_context)
         self.assertIn(self.conversation_as_user_b, conversations_in_context)
+
+    def test_inbox_view_uses_messaging_template(self):
+        # TC-MSG-009: inbox renders the intended messaging namespace template.
+        self.client.force_login(self.test_user)
+
+        response = self.client.get(reverse("messaging:inbox"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "messaging/inbox.html")
 
 # TC-MSG-009
 class SidebarActiveStateIntegrationTests(MarketplaceTestCase):
@@ -283,6 +306,7 @@ class SidebarActiveStateIntegrationTests(MarketplaceTestCase):
         self.conversation = Conversation.objects.create(user_a=user_a, user_b=user_b)
 
     def test_messages_sidebar_entry_renders_active_state(self):
+        # TC-MSG-010: inbox marks the Messages sidebar item active.
         self.client.force_login(self.test_user)
         response = self.client.get(reverse("messaging:inbox"))
 
@@ -294,6 +318,7 @@ class SidebarActiveStateIntegrationTests(MarketplaceTestCase):
         self.assertTrue(messages_item["is_active"])
 
     def test_messages_sidebar_entry_is_active_in_conversation_view(self):
+        # TC-MSG-010: conversation view marks the Messages sidebar item active.
         self.client.force_login(self.test_user)
         response = self.client.get(reverse("messaging:conversation", kwargs={"conversation_id": self.conversation.conversation_id}))
 

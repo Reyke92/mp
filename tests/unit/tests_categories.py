@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from django.core.cache import cache
 from django.test import TestCase
 from catalog.models import Category
 from catalog.utils import get_category
 
 class CategoryRetrievalTests(TestCase):
     def setUp(self) -> None:
+        cache.clear()
         self.parent1 = Category.objects.create(name="Parent 1", slug="parent-1")
         self.parent2 = Category.objects.create(name="Parent 2", slug="parent-2")
         self.child1 = Category.objects.create(name="Child 1", slug="child-1", parent_category=self.parent1)
@@ -13,6 +15,7 @@ class CategoryRetrievalTests(TestCase):
         self.child3 = Category.objects.create(name="Child 3", slug="child-3", parent_category=self.parent2)
 
     def test_get_category_returns_grouped_categories(self) -> None:
+        # TC-ATTR-001 / TC-SRCH-001: category retrieval returns parent groups with ordered children.
         expected = [
             {
                 "parent": {
