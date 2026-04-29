@@ -201,6 +201,60 @@ tests/
 
 The project also uses GitHub Actions for CI-based test execution.
 
+### Manual Playwright performance tests
+
+The performance cases in `tests.performance` are intentionally marked as manual because the Testing Document calls for browser-driven timing outside the main pytest/Django suites. The Playwright runner is located at:
+
+```text
+tests/performance/playwright_manual_performance.py
+```
+
+Install the Chromium browser for Playwright before running the manual timing checks:
+
+```bash
+python -m playwright install chromium
+```
+
+Copy the example configuration, update it with local test account credentials and representative record IDs, then run the timing harness against a running local server:
+
+```bash
+cp tests/performance/playwright_performance_config.example.json tests/performance/playwright_performance_config.local.json
+python manage.py runserver
+python tests/performance/playwright_manual_performance.py --config tests/performance/playwright_performance_config.local.json
+```
+
+State-changing timing checks for listing create/edit, message submission, and report submission are skipped by default. Run them only against a disposable or intentionally prepared performance dataset:
+
+```bash
+python tests/performance/playwright_manual_performance.py --config tests/performance/playwright_performance_config.local.json --include-write-tests
+```
+
+The runner writes JSON, CSV, and Markdown evidence files to `performance_results/`.
+
+### Manual Playwright UI tests
+
+The UI cases in `tests.ui` are executed through Playwright so the checks run against real rendered browser pages instead of Django's test client. The runner covers TC-UI-001 through TC-UI-008 from the Testing Document:
+
+```text
+tests/ui/playwright_manual_ui.py
+```
+
+Install the Chromium browser for Playwright if it is not already installed:
+
+```bash
+python -m playwright install chromium
+```
+
+The UI runner can reuse `tests/performance/playwright_performance_config.local.json`, or you can create a UI-specific local config:
+
+```bash
+cp tests/ui/playwright_ui_config.example.json tests/ui/playwright_ui_config.local.json
+python manage.py runserver
+python tests/ui/playwright_manual_ui.py
+```
+
+The browser is visible by default for manual UI observation. Use `--headless` when you want a headless run, and use `--only TC-UI-003` to run a single UI case. The runner writes JSON, CSV, and Markdown evidence files to `ui_results/`.
+
 ## Core Workflows
 
 ### Standard user flows

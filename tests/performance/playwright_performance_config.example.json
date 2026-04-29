@@ -1,0 +1,160 @@
+{
+  "base_url": "http://localhost:8000/",
+  "dataset_description": "Representative local Marketplace Website dataset with categories, public listings, conversations, messages, reports, and administrator/moderator data.",
+  "dataset_size": "Record the approximate counts here before saving an execution result, e.g., 1000 listings, 50 conversations, 25 reports.",
+  "build_commit": "Record the tested Git commit hash here, or set MP_PERF_BUILD_COMMIT.",
+  "users": {
+    "buyer": {
+      "email": "buyer@example.com",
+      "password": "password123"
+    },
+    "seller": {
+      "email": "seller@example.com",
+      "password": "password123"
+    },
+    "reporter": {
+      "email": "reporter@example.com",
+      "password": "password123"
+    },
+    "message_sender": {
+      "email": "conversation-participant@example.com",
+      "password": "password123"
+    },
+    "conversation_reporter": {
+      "email": "conversation-participant@example.com",
+      "password": "password123"
+    },
+    "moderator": {
+      "email": "moderator@example.com",
+      "password": "password123"
+    },
+    "admin": {
+      "email": "admin@example.com",
+      "password": "password123"
+    }
+  },
+  "ids": {
+    "listing_id": 1001,
+    "edit_listing_id": 1001,
+    "reportable_listing_id": 1002,
+    "conversation_id": 2,
+    "reportable_conversation_id": 2,
+    "report_id": 2,
+    "category_id": 1,
+    "condition_id": 2,
+    "state_id": 29
+  },
+  "paths": {
+    "login": "/login/",
+    "create_listing": "/listings/create/",
+    "edit_listing": "/listings/1001/edit/",
+    "conversation_detail": "/messaging/conversation/2/",
+    "listing_report": "/report/?listing_id=1002",
+    "conversation_report": "/report/?conversation_id=2",
+    "moderation_queue": "/moderation/queue/"
+  },
+  "search": {
+    "keyword": "table",
+    "city_name": "Elizabethtown",
+    "attribute_search_path": "/search/?category=1&attr_1_min=0&sort=newest"
+  },
+  "form_values": {
+    "create_listing": {
+      "title": "PERF TEST Listing",
+      "price_amount": "25.00",
+      "category": 1,
+      "condition": 2,
+      "city_name": "Elizabethtown",
+      "state": 29,
+      "description": "Performance timing listing description with enough content to satisfy validation.",
+      "extra_fields": {}
+    },
+    "edit_listing": {
+      "title": "PERF TEST Edited Listing",
+      "price_amount": "29.00",
+      "category": 1,
+      "condition": 2,
+      "city_name": "Elizabethtown",
+      "state": 29,
+      "description": "Performance timing edit description with enough content to satisfy validation.",
+      "extra_fields": {}
+    }
+  },
+  "standard_page_loads": [
+    {
+      "name": "homepage",
+      "path": "/",
+      "role": "guest"
+    },
+    {
+      "name": "category_filtered_results",
+      "path": "/search/?q=&category=1&min_price=&max_price=&condition=&distance_miles=&sort=most_relevant",
+      "role": "guest"
+    },
+    {
+      "name": "listing_detail",
+      "path": "/listings/1001/",
+      "role": "guest"
+    },
+    {
+      "name": "messages_inbox",
+      "path": "/messaging/inbox/",
+      "role": "buyer"
+    },
+    {
+      "name": "moderation_queue",
+      "path": "/moderation/queue/",
+      "role": "moderator"
+    }
+  ],
+  "search_requests": [
+    {
+      "name": "keyword_only",
+      "path": "/search/?q=table&sort=most_relevant",
+      "role": "guest"
+    },
+    {
+      "name": "mixed_filters",
+      "path": "/search/?category=1&condition=2&min_price=0&max_price=100000&sort=newest",
+      "role": "guest"
+    },
+    {
+      "name": "category_attribute_filters",
+      "path": "/search/?category=1&attr_1_min=0&sort=newest",
+      "role": "guest"
+    },
+    {
+      "name": "no_results",
+      "path": "/search/?q=zzzz_no_results_perf_probe_999999&sort=most_relevant",
+      "role": "guest"
+    }
+  ],
+  "report_detail_ids": [
+    2
+  ],
+  "admin_reporting_pages": [
+    {
+      "name": "admin_dashboard",
+      "path": "/admin/dashboard/",
+      "role": "admin"
+    },
+    {
+      "name": "user_management",
+      "path": "/admin/user_management/",
+      "role": "admin"
+    },
+    {
+      "name": "listing_management",
+      "path": "/admin/listing_management/",
+      "role": "admin"
+    }
+  ],
+  "pagination_checks": [
+    {
+      "name": "broad_search_first_page",
+      "path": "/search/?sort=newest",
+      "role": "guest"
+    }
+  ],
+  "django_settings_module": "marketplace.settings"
+}

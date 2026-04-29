@@ -283,3 +283,11 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/django,python,visualstudiocode
+
+# Manual performance-test output
+performance_results/
+tests/performance/playwright_performance_config.local.json
+
+# Manual UI-test output
+ui_results/
+tests/ui/playwright_ui_config.local.json

@@ -4,3 +4,4 @@ crispy-bootstrap5
 Pillow
 mysqlclient
 python-dotenv
+playwright

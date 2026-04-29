@@ -1,0 +1,61 @@
+{
+  "base_url": "http://localhost:8000/",
+  "dataset_description": "Representative local Marketplace Website dataset with public listings, seller-owned listings, conversations, reports, moderator data, and administrator data.",
+  "users": {
+    "buyer": {
+      "email": "buyer@example.com",
+      "password": "replace-me"
+    },
+    "seller": {
+      "email": "seller@example.com",
+      "password": "replace-me"
+    },
+    "message_sender": {
+      "email": "buyer@example.com",
+      "password": "replace-me"
+    },
+    "reporter": {
+      "email": "buyer@example.com",
+      "password": "replace-me"
+    },
+    "conversation_reporter": {
+      "email": "buyer@example.com",
+      "password": "replace-me"
+    },
+    "moderator": {
+      "email": "moderator@example.com",
+      "password": "replace-me"
+    },
+    "admin": {
+      "email": "admin@example.com",
+      "password": "replace-me"
+    }
+  },
+  "ids": {
+    "listing_id": 1001,
+    "edit_listing_id": 1001,
+    "conversation_id": 2,
+    "report_id": 2
+  },
+  "paths": {
+    "home": "/",
+    "search": "/search/?q=&category=&min_price=&max_price=&condition=&distance_miles=&sort=most_relevant",
+    "login": "/login/",
+    "register": "/register/",
+    "profile": "/profile/",
+    "my_listings": "/my-listings/",
+    "create_listing": "/listings/create/",
+    "edit_listing": "/listings/1001/edit/",
+    "listing_detail": "/listings/1001/",
+    "messages_inbox": "/messaging/inbox/",
+    "conversation_detail": "/messaging/conversation/2/",
+    "moderation_queue": "/moderation/queue/",
+    "report_detail": "/moderation/reports/2/",
+    "admin_dashboard": "/admin/dashboard/",
+    "admin_user_management": "/admin/user_management/",
+    "admin_listing_management": "/admin/listing_management/",
+    "admin_reports_hub": "/admin/reports_hub/",
+    "forbidden_probe": "/admin/dashboard/",
+    "frozen_listing_edit": ""
+  }
+}

@@ -1,16 +1,15 @@
 from __future__ import annotations
 
+from pathlib import Path
 from unittest import skip
 
 from django.test import SimpleTestCase
 
 
-@skip("Manual Playwright timing verification per the Software Testing Document.")
+@skip("Manual Playwright timing verification per the Software Testing Document. Run tests/performance/playwright_manual_performance.py instead.")
 class SearchPerformanceTests(SimpleTestCase):
-    # Use Playwright with Chromium for timing representative search flows.
+    def test_manual_runner_exists_for_search_and_pagination_timing(self) -> None:
+        runner_path = Path(__file__).with_name("playwright_manual_performance.py")
+        self.assertTrue(runner_path.exists())
 
-    def test_search_results_first_page_timing(self) -> None:
-        self.fail("Manual performance test placeholder.")
 
-    def test_listing_detail_timing(self) -> None:
-        self.fail("Manual performance test placeholder.")
